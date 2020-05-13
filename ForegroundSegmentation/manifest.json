@@ -1,0 +1,6 @@
+{
+	"name": "foregroungsegmentation",
+	"description" : "Foreground segmentation plugin with tensorflow",
+	"version" : "1.0.0",
+	"libs" : "libtensorflowlite.so"
+}
