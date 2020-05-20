@@ -2,8 +2,9 @@
 #include <string.h>
 #include <thread>
 #include <memory>
-#include "plugin/jamiplugin.h"
+#include <plugin/jamiplugin.h>
 #include "pluginMediaHandler.h"
+
 
 extern "C" 
 {

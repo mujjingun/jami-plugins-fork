@@ -14,10 +14,10 @@ extern "C" {
 #include <libavutil/frame.h>
 }
 // Plugin
-#include "plugin/jamiplugin.h"
-#include "plugin/mediahandler.h"
+#include <plugin/jamiplugin.h>
+#include <plugin/mediahandler.h>
 // Frame scaler for frame transformations
-#include "framescaler.h"
+#include <framescaler.h>
 
 namespace jami 
 {
@@ -43,9 +43,8 @@ namespace jami
 			void computePredictions();
 						
 			void printMask();
-			void drawMaskOnFrame(
-				cv::Mat &frame,
-				const std::vector<float> computedMask);		
+			void drawMaskOnFrame(cv::Mat &frame, const std::vector<float> computedMask);	
+			void drawMaskOnReducedFrame(cv::Mat &frame, cv::Mat &frameReduced, std::vector<float>computedMask);
 
 			// Output predictions
 			std::vector<float> computedMask;

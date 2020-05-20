@@ -5,11 +5,18 @@
 #include <string>
 #include <map>
 
-
 struct PluginParameters {
     std::string stream = "out";
+#ifdef TFLITE
+#ifdef __ANDROID
     std::string model = "model_256_Qlatency.tflite";
-    std::string image = "background1.png";
+#else
+    std::string model = "model_256_F_16.tflite";
+#endif    
+#else
+    std::string model = "frozen_inference_graph.pb";
+#endif //TFLITE
+    std::string image = "background2.png";
 };
 
 void setGlobalPluginParameters(std::map<std::string, std::string> pp);

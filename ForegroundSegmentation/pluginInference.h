@@ -24,21 +24,7 @@ namespace jami
 			PluginInference(TFModel model);
 			~PluginInference();
 
-			std::vector<float> masksPredictions() const;
-
-			/**
-			 * @brief feedInput
-			 * Checks if the image input dimensions matches the expected ones in the model
-			 * If so, fills the image data directly to the model input pointer
-			 * Otherwise, resizes the image in order to match the model expected image
-			 * dimensions And fills the image data throught the resize method
-			 * @param in: image data
-			 * @param imageWidth
-			 * @param imageHeight
-			 * @param imageNbChannels
-			 **/
-			void feedInput(std::vector<uint8_t> &in, int imageWidth, int imageHeight,
-							int imageNbChannels);
+#ifdef TFLITE
 			/**
 			 * @brief getInput
 			 * Returns the input where to fill the data
@@ -51,6 +37,14 @@ namespace jami
 			 */
 			std::pair<uint8_t *, std::vector<int>> getInput();
 
+#else
+			void ReadTensorFromMat(const cv::Mat& image);
+
+#endif //TFLITE
+
+			std::vector<float> masksPredictions() const;
+
+
 			/**
 			 * @brief setExpectedImageDimensions
 			 * Sets imageWidth and imageHeight from the sources
@@ -61,6 +55,7 @@ namespace jami
 			int getImageWidth() const;
 			int getImageHeight() const;
 			int getImageNbChannels() const;
+
 
 		private:
 			int imageWidth = 0;

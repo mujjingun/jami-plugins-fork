@@ -4,7 +4,7 @@
 extern "C" {
     #include <libavutil/frame.h>
 }
-#include "observer.h"
+#include <observer.h>
 
 //STl
 #include <map>
@@ -12,15 +12,10 @@ extern "C" {
 #include <condition_variable>
 
 // Frame Scaler
-#include "framescaler.h"
+#include <framescaler.h>
 
 // OpenCV headers
 #include <opencv2/core.hpp>
-
-// Flatbuffers / Tensorflow headers
-#include <tensorflow/lite/model.h>
-#include <tensorflow/lite/kernels/register.h>
-#include <tensorflow/lite/optional_debug_tools.h>
 
 #include "pluginProcessor.h"
 
@@ -35,6 +30,8 @@ namespace jami
 		// This frame is used to draw predictions into in RGB format
 		cv::Mat predictionsFrameBGR;
         cv::Size originalSize;
+		// This frame is used to draw predictions into in RGB format on a resized frame
+		cv::Mat predictionsResizedFrameBGR;
 	};
 
     class VideoSubscriber : public jami::Observer<AVFrame *> 

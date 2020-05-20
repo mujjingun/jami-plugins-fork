@@ -2,7 +2,7 @@
 // Logger
 #include "pluglog.h"
 const char sep = separator();
-const std::string TAG = "GENERIC";
+const std::string TAG = "FORESEG";
 
 namespace jami 
 {
@@ -11,8 +11,9 @@ namespace jami
 	{
     	setGlobalPluginParameters(ppm_);
     	setId(datapath_);
-		mpInput = std::make_shared<VideoSubscriber>(datapath_);
-		mpReceive = std::make_shared<VideoSubscriber>(datapath_);
+		mVS = std::make_shared<VideoSubscriber>(datapath_);
+		// mpInput = std::make_shared<VideoSubscriber>(datapath_);
+		// mpReceive = std::make_shared<VideoSubscriber>(datapath_);
 	}
 
 	void PluginMediaHandler::notifyAVFrameSubject(const StreamData &data, jami::avSubjectPtr subject)
@@ -39,11 +40,13 @@ namespace jami
 		oss << "preferredStreamDirection " << preferredStreamDirection << std::endl;
 		if (data.type == StreamType::video && !data.direction && data.direction == preferredStreamDirection) 
 		{
-			subject->attach(mpInput.get()); // my image
+			subject->attach(mVS.get()); // my image
+			// subject->attach(mpInput.get()); // my image
 			oss << "got my sent image attached" << std::endl;
 		} else if (data.type == StreamType::video && data.direction && data.direction == preferredStreamDirection) 
 		{
-			subject->attach(mpReceive.get()); // the image i receive from the others on the call
+			subject->attach(mVS.get()); // the image i receive from the others on the call
+			// subject->attach(mpReceive.get()); // the image i receive from the others on the call
 			oss << "got my received image attached" << std::endl;
 		}
 		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
@@ -70,14 +73,15 @@ namespace jami
 
 	void PluginMediaHandler::detach()
 	{
-		mpInput->detach();
-		mpReceive->detach();
+		mVS->detach();
+		// mpInput->detach();
+		// mpReceive->detach();
 	}
 
 	PluginMediaHandler::~PluginMediaHandler() 
 	{
 		std::ostringstream oss;
-		oss << " ~GENERIC Plugin" << std::endl;
+		oss << " ~FORESEG Plugin" << std::endl;
 		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 		detach();
 	}

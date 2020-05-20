@@ -2,12 +2,15 @@
 
 // Library headers
 #include "TFModels.h"
-#include <tensorflow/lite/delegates/nnapi/nnapi_delegate.h>
 
 // STL
 #include <memory>
 #include <string>
 #include <vector>
+
+#ifdef TFLITE
+    #include <tensorflow/lite/interpreter.h>
+    #include <tensorflow/lite/delegates/nnapi/nnapi_delegate.h>
 
 namespace tflite 
 {
@@ -15,6 +18,27 @@ namespace tflite
     class Interpreter;
     class StatefulNnApiDelegate;
 } // namespace tflite
+
+#else
+    #include <tensorflow/core/lib/core/status.h>
+    #include <tensorflow/core/public/session.h>
+    #include <tensorflow/core/framework/tensor.h>
+    #include <tensorflow/core/framework/types.pb.h>
+    #include <tensorflow/core/platform/init_main.h>
+
+namespace tensorflow 
+{
+    class Tensor;
+    class Status;
+    class GraphDef;
+    class Session;
+    class TensorShape;
+    class Env;
+    enum DataType:int;
+} // namespace namespace tensorflow 
+
+#endif
+
 
 namespace jami 
 {
@@ -28,6 +52,8 @@ namespace jami
              */
             TensorflowInference(TFModel model);
             ~TensorflowInference();
+
+#ifdef TFLITE
             /**
              * @brief loadModel
              * Load the model from the file described in the Supervised Model
@@ -43,6 +69,16 @@ namespace jami
              */
             void allocateTensors();
 
+            // Debug methods
+            void describeModelTensors() const;
+            void describeTensor(std::string prefix, int index) const;
+
+#else
+            void LoadGraph();
+			tensorflow::Tensor imageTensor = tensorflow::Tensor(tensorflow::DataType::DT_UINT8, tensorflow::TensorShape({ 1, 256, 256, 3 }));
+
+#endif //TFLITE
+
             /**
              * @brief runGraph
              * runs the underlaying graph model.numberOfRuns times
@@ -57,12 +93,9 @@ namespace jami
             void init();
             // Getters
             bool isAllocated() const;
-            // Debug methods
-            void describeModelTensors() const;
-            void describeTensor(std::string prefix, int index) const;
 
         protected:
-
+#ifdef TFLITE
             /**
              * @brief getTensorDimensions
              * Utility method to get Tensorflow Tensor dimensions
@@ -74,6 +107,13 @@ namespace jami
              */
             std::vector<int> getTensorDimensions(int index) const;
 
+            // Tensorflow model and interpreter
+            std::unique_ptr<tflite::FlatBufferModel> flatbufferModel;
+            std::unique_ptr<tflite::Interpreter> interpreter;
+#else
+            std::unique_ptr<tensorflow::Session> session;
+            std::vector<tensorflow::Tensor> outputs;            
+#endif
             TFModel tfModel;
             std::vector<std::string> labels;
 
@@ -83,12 +123,6 @@ namespace jami
              */
             size_t nbLabels;
 
-            // Tensorflow model and interpreter
-            std::unique_ptr<tflite::FlatBufferModel> flatbufferModel;
-            std::unique_ptr<tflite::Interpreter> interpreter;
-            // std::unique_ptr<TfLiteDelegate*> optionalNnApiDelegate;
-
-            // tflite::StatefulNnApiDelegate delegate = tflite::StatefulNnApiDelegate();
             bool allocated = false;
     };
 }

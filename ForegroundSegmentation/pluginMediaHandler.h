@@ -23,8 +23,9 @@ namespace jami
 			virtual void detach() override;
 			virtual void setPreferenceAttribute(const std::string& key, const std::string& value) override;
 			
-			std::shared_ptr<VideoSubscriber> mpInput;
-			std::shared_ptr<VideoSubscriber> mpReceive;
+			std::shared_ptr<VideoSubscriber> mVS;
+			// std::shared_ptr<VideoSubscriber> mpInput;
+			// std::shared_ptr<VideoSubscriber> mpReceive;
 			
 			std::string dataPath() const { return datapath_; }
 

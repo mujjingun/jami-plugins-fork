@@ -6,11 +6,26 @@ OPENCV VERSION 4.1.1
 OPENCV_CONTRIB VERSION 4.1.1
 
 For Android:
-    $ cd <ring-project>/clent-android/
-    change line 158:
-        from ../bootstrap --host=${TARGET_TUPLE} --enable-ffmpeg #--disable-opencv --disable-opencv_contrib
-        to ../bootstrap --host=${TARGET_TUPLE} --enable-ffmpeg --disable-opencv --disable-opencv_contrib
-    $ cd .. && ./make-ring.py --install --distribution=Android
+    1) Download and install Android NDK
+    2) Compile the dependencies
+
+        export ANDROID_NDK=<NDK>
+        export ANDROID_ABI=arm64-v8a
+        export ANDROID_API=29
+        export TOOLCHAIN=$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64
+        export TARGET=aarch64-linux-android
+        export CC=$TOOLCHAIN/bin/$TARGET$ANDROID_API-clang
+        export CXX=$TOOLCHAIN/bin/$TARGET$ANDROID_API-clang++
+        export AR=$TOOLCHAIN/bin/$TARGET-ar
+        export LD=$TOOLCHAIN/bin/$TARGET-ld
+        export RANLIB=$TOOLCHAIN/bin/$TARGET-ranlib
+        export STRIP=$TOOLCHAIN/bin/$TARGET-strip
+        export PATH=$PATH:$TOOLCHAIN/bin
+        cd contrib
+        mkdir native
+        cd native
+        ../bootstrap --build=x86_64-pc-linux-gnu --host=$TARGET$ANDROID_API --enable-opencv --enable-opencv_contrib
+        make
 
 For Linux:
     $ cd ${DAEMON}/contrib/native/
@@ -24,14 +39,14 @@ TF VERSION 2.1.0
 
 Dependencies:
     1 - python 3
-    2 - bazel 0.27.1
+    2 - bazel 0.29.1
 
 $ git clone https://github.com/tensorflow/tensorflow.git
 $ cd tensorflow
 $ git checkout -b v2.1.0
 
 
-For Android:
+For Android: (Tensorflow Lite)
     Dependencies:
         1 - Android NDK 18r
 
@@ -51,11 +66,22 @@ For Linux:
 
     $ ./configure 
 
+    For TFLite:
+    $ bazel build --config=v1 --define framework_shared_object=false //tensorflow:libtensorflow_cc.so
+    or
+    For Tensorflow C++ API:
     $ bazel build //tensorflow/lite:libtensorflowlite.so
+    
+    OBS.: If you want to build Tensorflow C++ API with GPU suport, be sure to have a CUDA capable GPU and that you have 
+    followed all installation steps for the Nvidia drivers, CUDA Toolkit, CUDNN, Tensor RT, that their versions 
+    matches and that they are correct for the Tensorflow version you want to build. The following links may be very helpfull:
+        - https://www.tensorflow.org/install/source
+        - https://developer.nvidia.com/cuda-gpus
+        - https://developer.nvidia.com/cuda-toolkit-archive
+        - https://developer.nvidia.com/cudnn
 
 
-
-TENSORFLOW INCLUDES ASSEMBLE INSTRUCTIONS
+TENSORFLOWLITE INCLUDES ASSEMBLE INSTRUCTIONS
 
     Keep in mind that after each of bazel build instructions above listed, there will be a "libtensorflowlite.so" created at:
         "<tensorflow>/bazel-genfiles/tensorflow/lite/"
@@ -140,3 +166,42 @@ TENSORFLOW INCLUDES ASSEMBLE INSTRUCTIONS
                         stl_emulation.h
                         util.h
 
+
+TENSORFLOW C++ API INCLUDES ASSEMBLE INSTRUCTIONS
+
+    Keep in mind that after the bazel build listed, there will be a "libtensorflow_cc.so.__version__" created at:
+        "<tensorflow>/bazel-genfiles/tensorflow/"
+
+    create folders and copy files to have the following path struture:
+    After copying libtensorflow_cc.so.__version__, rename it to libtensorflow_cc.so
+    ~home/Libs/
+            _tensorflow_cc/
+                lib/
+                    x86_64-linux-gnu/
+                        libtensorflow_cc.so
+                    ...
+                include/
+                    tensorflow/
+                        core/
+                            -> keep folder structure and copy all header files from "<tensorflow>/
+                            tensorflow/core"
+                            -> copy all proto header files (.pb.h) from 
+                            "<tensorflow>/bazel-genfiles/tensorflow/core/"
+                    absl/
+                        -> keep folder structure and copy all header and .inc files from "<tensorflow>/
+                        bazel-tensorflow/external/com_google_absl/absl/"
+                    google/
+                        -> keep folder structure and copy all header, proto headers, and .inc files from "<tensorflow>/bazel-tensorflow/external/com_google_protobuf/src/google/"
+                    third_party/
+                        eigen3/
+                            Eigen/
+                                -> keep folder structure and copy all files from 
+                                "<tensorflow>/bazel-tensorflow/external/eigen_archive/Eigen/"
+                            unsupported/
+                                Eigen/
+                                    -> keep folder structure and copy all files from "<tensorflow>/bazel-tensorflow/external/eigen_archive/unsupported/Eigen/"
+                                    CXX11/
+                                        -> copy "<tensorflow>/third_party/eigen3/unsupported/Eigen/CXX11/FixedPoint"
+                                        -> copy "<tensorflow>/third_party/eigen3/unsupported/Eigen/CXX11/src/" 
+
+--> Be aware to apply any needed changes to the build.sh file so that the plugin can be build against the standart tensorflow_cc library.

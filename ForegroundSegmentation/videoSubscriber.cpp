@@ -1,4 +1,3 @@
-
 #include "videoSubscriber.h"
 // Use for display rotation matrix
 extern "C" {
@@ -10,7 +9,7 @@ extern "C" {
 #include <opencv2/imgcodecs.hpp>
 
 // LOGGING
-#include "pluglog.h"
+#include <pluglog.h>
 
 const std::string TAG = "FORESEG";
 const char sep = separator();
@@ -34,12 +33,14 @@ namespace jami
                 {
                     break;
                 }
+				// Plog::log(Plog::LogPriority::INFO, TAG, "feed");
 				pluginProcessor.feedInput(fcopy.resizedFrameRGB);
                 newFrame = false;
                 /** Unclock the mutex, this way we let the other thread
                  *  copy new data while we are processing the old one
                  **/
                 l.unlock();
+				// Plog::log(Plog::LogPriority::INFO, TAG, "compute");
 				pluginProcessor.computePredictions();
             }
         });
@@ -49,18 +50,17 @@ namespace jami
 	{
 		std::ostringstream oss;
 		oss << "~MediaProcessor" << std::endl;
-		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 		stop();
 		processFrameThread.join();
+		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 	}
 
 	void VideoSubscriber::update(jami::Observable<AVFrame *> *, AVFrame *const &iFrame) 
 	{
+		// Plog::log(Plog::LogPriority::INFO, TAG, "inside update()");
 		if (isAttached) 
 		{
 			std::ostringstream oss;
-			//oss << "Looking for iFrame signal: ";
-			//Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 			//======================================================================================
 			// GET FRAME ROTATION
 			AVFrameSideData *side_data =
@@ -73,6 +73,7 @@ namespace jami
 				angle = static_cast<int>(av_display_rotation_get(matrix_rotation));
 			}
 
+			// Plog::log(Plog::LogPriority::INFO, TAG, "step GET RAW FRAME");
 			//======================================================================================
 			// GET RAW FRAME
 			// Use a non-const Frame
@@ -88,8 +89,8 @@ namespace jami
 						static_cast<size_t>(bgrFrame->linesize[0])};
 			// First clone the frame as the original one is unusable because of
 			// linespace
+
 			cv::Mat clone = frame.clone();
-			//pluginProcessor.backgroundImage = frame.clone();
 			//======================================================================================
 			// ROTATE THE FRAME
 			// rotateFrame(angle, clone);
@@ -97,21 +98,14 @@ namespace jami
 			
 			if (firstRun) 
 			{
+				// Plog::log(Plog::LogPriority::INFO, TAG, "step firstRun");
 				pluginProcessor.pluginInference.setExpectedImageDimensions();
 				fcopy.resizedSize = cv::Size{pluginProcessor.pluginInference.getImageWidth(), pluginProcessor.pluginInference.getImageHeight()};
 
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
-				cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.originalSize);
+				// cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.originalSize);
+				cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.resizedSize);
 				
-				// Print Frame dimensions
-				// std::ostringstream oss1;
-				// oss1 << "IS ALLOCATED " << pluginProcessor.pluginInference.isAllocated() << std::endl;
-				// oss1 << "FRAME[]: w: " << iFrame->width << " , h: " << iFrame->height
-					// << " , format: " << iFrame->format << std::endl;
-				// oss1 << "DESIRED WIDTH: " << pluginProcessor.pluginInference.getImageWidth() << std::endl;
-				// oss1 << "DESIRED WIDTH: " << pluginProcessor.pluginInference.getImageHeight() << std::endl;
-				// Plog::log(Plog::LogPriority::INFO, TAG, oss1.str());
-
 				firstRun = false;
 			}
 
@@ -119,17 +113,18 @@ namespace jami
 
 			if (!newFrame) 
 			{
+				// Plog::log(Plog::LogPriority::INFO, TAG, "step newFrame");
 				std::lock_guard<std::mutex> l(inputLock);
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
 				newFrame = true;
 				inputCv.notify_all();
 			}
 
+			// Plog::log(Plog::LogPriority::INFO, TAG, "step result");
 			fcopy.predictionsFrameBGR = frame;
-			// pluginProcessor.printMask();
-			pluginProcessor.drawMaskOnFrame(fcopy.predictionsFrameBGR, pluginProcessor.computedMask);
-
-
+			fcopy.predictionsResizedFrameBGR = fcopy.resizedFrameRGB.clone();
+			// pluginProcessor.drawMaskOnFrame(fcopy.predictionsFrameBGR, pluginProcessor.computedMask);
+			pluginProcessor.drawMaskOnReducedFrame(fcopy.predictionsFrameBGR, fcopy.predictionsResizedFrameBGR, pluginProcessor.computedMask);
 
 			//======================================================================================
 			// REPLACE AVFRAME DATA WITH FRAME DATA
@@ -137,6 +132,7 @@ namespace jami
 			// rotateFrame(-angle, clone);
 			// rotateFrame(-angle, frame);
 
+			// Plog::log(Plog::LogPriority::INFO, TAG, "step REPLACE AVFRAME DATA WITH FRAME DATA");
 			if (bgrFrame && bgrFrame->data[0]) 
 			{
 				uint8_t* frameData = bgrFrame->data[0];
@@ -146,6 +142,15 @@ namespace jami
 				}
 			}
 
+			// Plog::log(Plog::LogPriority::INFO, TAG, "step Copy Frame meta data");
+			// if (bgrFrame) {
+			// 	Plog::log(Plog::LogPriority::INFO, TAG, "step bgrFrame");
+
+			// }
+			// if (incFrame) {
+			// 	Plog::log(Plog::LogPriority::INFO, TAG, "step incFrame");
+
+			// }
 			// Copy Frame meta data
 			if (bgrFrame && incFrame) 
 			{
@@ -161,7 +166,8 @@ namespace jami
 			Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 
 			// Remove the pointer
-			//incFrame = nullptr;
+			incFrame = nullptr;
+			// Plog::log(Plog::LogPriority::INFO, TAG, "step end update");
 		}
 	}
 

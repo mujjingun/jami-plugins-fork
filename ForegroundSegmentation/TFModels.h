@@ -10,21 +10,28 @@ struct TFModelConfiguration
     TFModelConfiguration(std::string& model): modelPath{model} {}
     std::string modelPath;
     std::vector<unsigned int> normalizationValues;
+    std::vector<int> dims = {1,256,256,3}; //model Input dimensions
+    unsigned int numberOfRuns = 1;
 
-    // Tensorflow specific settings
 
-    #ifdef __ANDROID__
+    // TensorflowLite specific settings
+
+#ifdef TFLITE
+#ifdef __ANDROID__
     bool useNNAPI = true;
-    #else
+#else
     bool useNNAPI = false;
-    #endif // __ANDROID__
-
+#endif //__ANDROID__
     bool allowFp16PrecisionForFp32 = true;
-    unsigned int numberOfThreads = 4;
+    unsigned int numberOfThreads = 1;
 
     // User defined details
     bool inputFloating = false;
-    unsigned int numberOfRuns = 1;
+#else
+    std::string inputLayer = "ImageTensor";
+    std::string outputLayer = "ArgMax";
+#endif // TFLITE
+
 };
 
 struct TFModel : TFModelConfiguration 

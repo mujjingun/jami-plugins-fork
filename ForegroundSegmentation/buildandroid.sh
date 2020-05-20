@@ -15,7 +15,6 @@ SO_FILE_NAME="lib"${PLUGIN_NAME}".so"
 LIBS_DIR="/home/${USER}/Libs"
 DAEMON_SRC="${DAEMON}/src"
 CONTRIB_PATH="${DAEMON}/contrib"
-# DESTINATION_PATH=/home/${USER}/Projects/ring-plugins
 DESTINATION_PATH="./../build/"
 PLUGINS_LIB="../lib"
 
@@ -125,12 +124,13 @@ buildlib() {
 
 	# Create so destination folder
     $CXX --std=c++14 -O3 -g -fPIC \
-	-Wl,-Bsymbolic \
+	-Wl,-Bsymbolic,-rpath,"\${ORIGIN}" \
 	-shared \
 	-Wall -Wextra \
 	-Wno-unused-variable \
 	-Wno-unused-function \
 	-Wno-unused-parameter \
+	-DTFLITE \
 	-I"." \
 	-I${DAEMON_SRC} \
 	-I"${CONTRIB_PATH}/${CONTRIB_PLATFORM}/include" \
