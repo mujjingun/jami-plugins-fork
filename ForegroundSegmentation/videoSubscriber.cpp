@@ -14,7 +14,7 @@ extern "C" {
 const std::string TAG = "FORESEG";
 const char sep = separator();
 
-namespace jami 
+namespace jami
 {
 	VideoSubscriber::VideoSubscriber(const std::string &dataPath): path_{dataPath},
 	pluginProcessor{dataPath}
@@ -23,13 +23,13 @@ namespace jami
 		 * Waits for new frames and then process them
 		 * Writes the predictions in computedPredictions
 		 **/
-		processFrameThread = std::thread([this] 
+		processFrameThread = std::thread([this]
         {
-            while (running) 
+            while (running)
             {
                 std::unique_lock<std::mutex> l(inputLock);
                 inputCv.wait(l, [this] { return not running or newFrame; });
-                if (not running) 
+                if (not running)
                 {
                     break;
                 }
@@ -55,19 +55,19 @@ namespace jami
 		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 	}
 
-	void VideoSubscriber::update(jami::Observable<AVFrame *> *, AVFrame *const &iFrame) 
+	void VideoSubscriber::update(jami::Observable<AVFrame *> *, AVFrame *const &iFrame)
 	{
 		// Plog::log(Plog::LogPriority::INFO, TAG, "inside update()");
-		if (isAttached) 
+		if (isAttached)
 		{
 			std::ostringstream oss;
 			//======================================================================================
 			// GET FRAME ROTATION
 			AVFrameSideData *side_data =
 				av_frame_get_side_data(iFrame, AV_FRAME_DATA_DISPLAYMATRIX);
-			
+
 			int angle{0};
-			if (side_data) 
+			if (side_data)
 			{
 				auto matrix_rotation = reinterpret_cast<int32_t *>(side_data->data);
 				angle = static_cast<int>(av_display_rotation_get(matrix_rotation));
@@ -95,8 +95,8 @@ namespace jami
 			// ROTATE THE FRAME
 			// rotateFrame(angle, clone);
 			// rotateFrame(angle, frame);
-			
-			if (firstRun) 
+
+			if (firstRun)
 			{
 				// Plog::log(Plog::LogPriority::INFO, TAG, "step firstRun");
 				pluginProcessor.pluginInference.setExpectedImageDimensions();
@@ -105,13 +105,13 @@ namespace jami
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
 				// cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.originalSize);
 				cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.resizedSize);
-				
+
 				firstRun = false;
 			}
 
             auto process_start = std::chrono::system_clock::now();
 
-			if (!newFrame) 
+			if (!newFrame)
 			{
 				// Plog::log(Plog::LogPriority::INFO, TAG, "step newFrame");
 				std::lock_guard<std::mutex> l(inputLock);
@@ -123,8 +123,8 @@ namespace jami
 			// Plog::log(Plog::LogPriority::INFO, TAG, "step result");
 			fcopy.predictionsFrameBGR = frame;
 			fcopy.predictionsResizedFrameBGR = fcopy.resizedFrameRGB.clone();
-			// pluginProcessor.drawMaskOnFrame(fcopy.predictionsFrameBGR, pluginProcessor.computedMask);
-			pluginProcessor.drawMaskOnReducedFrame(fcopy.predictionsFrameBGR, fcopy.predictionsResizedFrameBGR, pluginProcessor.computedMask);
+			pluginProcessor.drawMaskOnFrame(fcopy.predictionsFrameBGR, fcopy.predictionsResizedFrameBGR,
+												   pluginProcessor.computedMask, bgrFrame->linesize[0]);
 
 			//======================================================================================
 			// REPLACE AVFRAME DATA WITH FRAME DATA
@@ -133,26 +133,16 @@ namespace jami
 			// rotateFrame(-angle, frame);
 
 			// Plog::log(Plog::LogPriority::INFO, TAG, "step REPLACE AVFRAME DATA WITH FRAME DATA");
-			if (bgrFrame && bgrFrame->data[0]) 
+			if (bgrFrame && bgrFrame->data[0])
 			{
 				uint8_t* frameData = bgrFrame->data[0];
-				if(angle == 90 || angle == -90) 
+				if(angle == 90 || angle == -90)
 				{
 					std::memmove(frameData, fcopy.predictionsFrameBGR.data, static_cast<size_t>(iFrame->width*iFrame->height*3) * sizeof(uint8_t));
 				}
 			}
-
-			// Plog::log(Plog::LogPriority::INFO, TAG, "step Copy Frame meta data");
-			// if (bgrFrame) {
-			// 	Plog::log(Plog::LogPriority::INFO, TAG, "step bgrFrame");
-
-			// }
-			// if (incFrame) {
-			// 	Plog::log(Plog::LogPriority::INFO, TAG, "step incFrame");
-
-			// }
 			// Copy Frame meta data
-			if (bgrFrame && incFrame) 
+			if (bgrFrame && incFrame)
 			{
 				av_frame_copy_props(bgrFrame.get(), incFrame);
 				scaler.moveFrom(incFrame, bgrFrame.get());
@@ -171,7 +161,7 @@ namespace jami
 		}
 	}
 
-	void VideoSubscriber::attached(jami::Observable<AVFrame *> *observable) 
+	void VideoSubscriber::attached(jami::Observable<AVFrame *> *observable)
 	{
 		std::ostringstream oss;
 		oss << "::Attached ! " << std::endl;
@@ -189,7 +179,7 @@ namespace jami
 		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 	}
 
-	void VideoSubscriber::detach() 
+	void VideoSubscriber::detach()
 	{
 		if (isAttached)
 		{
@@ -206,11 +196,11 @@ namespace jami
 		inputCv.notify_all();
 	}
 
-	void VideoSubscriber::rotateFrame(int angle, cv::Mat &mat) 
+	void VideoSubscriber::rotateFrame(int angle, cv::Mat &mat)
 	{
-		if (angle != 0) 
+		if (angle != 0)
 		{
-			switch (angle) 
+			switch (angle)
 			{
 				case -90:
 					cv::rotate(mat, mat, cv::ROTATE_90_COUNTERCLOCKWISE);
@@ -226,4 +216,3 @@ namespace jami
 		}
 	}
 }
-

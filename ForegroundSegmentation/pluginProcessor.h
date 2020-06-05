@@ -19,12 +19,12 @@ extern "C" {
 // Frame scaler for frame transformations
 #include <framescaler.h>
 
-namespace jami 
+namespace jami
 {
-	class PluginProcessor 
+	class PluginProcessor
 	{
 		public:
-			PluginProcessor(const std::string &dataPath);			
+			PluginProcessor(const std::string &dataPath);
 			//~PluginProcessor();
 
 			void initModel();
@@ -41,10 +41,9 @@ namespace jami
 			 * computedPredictions
 			 */
 			void computePredictions();
-						
+
 			void printMask();
-			void drawMaskOnFrame(cv::Mat &frame, const std::vector<float> computedMask);	
-			void drawMaskOnReducedFrame(cv::Mat &frame, cv::Mat &frameReduced, std::vector<float>computedMask);
+			void drawMaskOnFrame(cv::Mat &frame, cv::Mat &frameReduced, std::vector<float>computedMask, int lineSize);
 
 			// Output predictions
 			std::vector<float> computedMask;
@@ -52,14 +51,14 @@ namespace jami
 			std::vector<float> computedMask2;
 			std::vector<float> computedMask3;
 
-            cv::Mat backgroundImage;	
-			
+            cv::Mat backgroundImage;
+
 			cv::Size kSize;
 			float scaleX = 0;
-			float scaleY = 0;	
-			
+			float scaleY = 0;
+
             PluginInference pluginInference;
-			std::string backgroundPath;			
+			std::string backgroundPath;
 
 		private:
             // Frame

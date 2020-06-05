@@ -9,7 +9,7 @@ if [ -z $ANDROID_NDK ]; then
     echo "ANDROID_NDK not provided, building with ${ANDROID_NDK}"
 fi
 
-PLUGIN_NAME="foregroungsegmentation"
+PLUGIN_NAME="foregroundsegmentation"
 JPL_FILE_NAME=${PLUGIN_NAME}".jpl"
 SO_FILE_NAME="lib"${PLUGIN_NAME}".so"
 LIBS_DIR="/home/${USER}/Libs"
@@ -44,7 +44,7 @@ buildlib() {
 	export LD=$TOOLCHAIN/bin/arm-linux-android-ld
 	export RANLIB=$TOOLCHAIN/bin/arm-linux-android-ranlib
 	export STRIP=$TOOLCHAIN/bin/arm-linux-androideabi-strip
-	export ANDROID_SYSROOT=/home/${USER}/Projects/ring-android-project/client-android/android-toolchain-21-arm/sysroot
+	export ANDROID_SYSROOT=./../../client-android/android-toolchain-21-arm/sysroot
 
 	elif [ $CURRENT_ABI = arm64-v8a ]
 	then
@@ -55,7 +55,7 @@ buildlib() {
 	export LD=$TOOLCHAIN/bin/aarch64-linux-android-ld
 	export RANLIB=$TOOLCHAIN/bin/aarch64-linux-android-ranlib
 	export STRIP=$TOOLCHAIN/bin/aarch64-linux-android-strip
-	export ANDROID_SYSROOT=/home/${USER}/Projects/ring-android-project/client-android/android-toolchain-21-arm64/sysroot
+	export ANDROID_SYSROOT=./../../client-android/android-toolchain-21-arm64/sysroot
 
 	elif [ $CURRENT_ABI = x86_64 ]
 	then
@@ -66,13 +66,13 @@ buildlib() {
 	export LD=$TOOLCHAIN/bin/x86_64-linux-android-ld
 	export RANLIB=$TOOLCHAIN/bin/x86_64-linux-android-ranlib
 	export STRIP=$TOOLCHAIN/bin/x86_64-linux-android-strip
-	export ANDROID_SYSROOT=/home/${USER}/Projects/ring-android-project/client-android/android-toolchain-21-x86_64/sysroot
+	export ANDROID_SYSROOT=./../../client-android/android-toolchain-21-x86_64/sysroot
 
 	else
 	echo "ABI NOT OK" >&2
 	exit 1
 	fi
-	
+
 	#=========================================================
 	#	CONTRIBS
 	#=========================================================
@@ -88,14 +88,14 @@ buildlib() {
 	then
 	CONTRIB_PLATFORM=x86_64-linux-android
 	fi
-	
+
 	# ASSETS
-	ANDROID_PROJECT_ASSETS=/home/${USER}/Projects/ring-android-project/client-android/ring-android/app/src/main/assets
+	ANDROID_PROJECT_ASSETS=./../../client-android/ring-android/app/src/main/assets
 	# LIBS FOLDER
-	ANDROID_PROJECT_LIBS=/home/${USER}/Projects/ring-android-project/client-android/ring-android/app/src/main/libs/$CURRENT_ABI
+	ANDROID_PROJECT_LIBS=./../../client-android/ring-android/app/src/main/libs/$CURRENT_ABI
 	#NDK SOURCES FOR cpufeatures
 	NDK_SOURCES=${ANDROID_NDK}/sources/android
-	
+
 	#=========================================================
 	#	LD_FLAGS
 	#=========================================================
@@ -109,7 +109,7 @@ buildlib() {
 	then
 	export EXTRA_LDFLAGS="${EXTRA_LDFLAGS} -L${ANDROID_SYSROOT}/usr/lib/x86_64-linux-android -L${ANDROID_SYSROOT}/usr/lib/x86_64-linux-android/21"
 	fi
-	
+
 	#=========================================================
 	#	Compile CPU FEATURES, NEEDED FOR OPENCV
 	#=========================================================
@@ -118,7 +118,7 @@ buildlib() {
 	#=========================================================
 	#	Compile the plugin
 	#=========================================================
-	
+
 	# Create so destination folder
 	mkdir -p lib/$CURRENT_ABI
 
@@ -160,11 +160,11 @@ buildlib() {
 	-o lib/$CURRENT_ABI/${SO_FILE_NAME}
 	# (above) Always put opencv_core after all other opencv libs when linking statically
 	# (above) Put libavutil after other ffmpeg libraries
-	
+
 	cp ${LIBS_DIR}/_tensorflow_distribution/lib/${CURRENT_ABI}/libtensorflowlite.so lib/$CURRENT_ABI
 }
 
-# Build the so 
+# Build the so
 for i in ${ANDROID_ABI}; do
 	CURRENT_ABI=$i
 	buildlib
