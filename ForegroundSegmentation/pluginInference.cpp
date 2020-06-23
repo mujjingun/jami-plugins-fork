@@ -9,9 +9,9 @@ const std::string TAG = "FORESEG";
 
 namespace jami 
 {
-	PluginInference::PluginInference(TFModel model) : TensorflowInference(model) 
+	PluginInference::PluginInference(TFModel model) : TensorflowInference(model)
 	{
-#ifndef TFLITE	
+#ifndef TFLITE
 		//Initialize TENSORFLOW_CC lib
 		static const char* kFakeName = "fake program name";
 		int argc = 1;
@@ -22,7 +22,7 @@ namespace jami
             Plog::log(Plog::LogPriority::INFO, "TENSORFLOW INIT", "Unknown argument " );
 		}
 		free(fake_name_copy);
-#endif	//TFLITE	
+#endif	//TFLITE
 	}
 
 	PluginInference::~PluginInference(){}
@@ -111,7 +111,7 @@ namespace jami
 	// Given an image file name, read in the data, try to decode it as an image,
 	// resize it to the requested size, and then scale the values as desired.
 	void PluginInference::ReadTensorFromMat(const cv::Mat& image) 
-	{	
+	{
 		// std::ostringstream oss;
 		// oss << image.rows;
 		// Plog::log(Plog::LogPriority::INFO, "ReadTensorFromMat", oss.str());
@@ -148,32 +148,32 @@ namespace jami
 			case tensorflow::DataType::DT_INT32:
 			{
 				for (int offset = 0; offset < flatSize; offset++)
-				{			
+				{
 					// Get vaule through .flat()
-					out.push_back(static_cast<float> (outputs[0].flat<tensorflow::int32>()(offset)));					
+					out.push_back(static_cast<float> (outputs[0].flat<tensorflow::int32>()(offset)));
 				}
 				break;
 			}
 			case tensorflow::DataType::DT_INT64:
 			{
 				for (int offset = 0; offset < flatSize; offset++)
-				{			
+				{
 					// Get vaule through .flat()
-					if (outputs[0].flat<tensorflow::int64>()(offset) == 15 or outputs[0].flat<tensorflow::int64>()(offset) == 1)
-					{
-						oss << "  " << outputs[0].flat<tensorflow::int64>()(offset);
-						Plog::log(Plog::LogPriority::INFO, "masksPredictions", oss.str());
-					}
-					out.push_back(static_cast<float> (outputs[0].flat<tensorflow::int64>()(offset)));					
+					// if (outputs[0].flat<tensorflow::int64>()(offset) == 15 or outputs[0].flat<tensorflow::int64>()(offset) == 1)
+					// {
+					// 	oss << "  " << outputs[0].flat<tensorflow::int64>()(offset);
+					// 	Plog::log(Plog::LogPriority::INFO, "masksPredictions", oss.str());
+					// }
+					out.push_back(static_cast<float> (outputs[0].flat<tensorflow::int64>()(offset)));
 				}
 				break;
 			}
 			default:
 			{
 				for (int offset = 0; offset < flatSize; offset++)
-				{			
+				{
 					// Get vaule through .flat()
-					out.push_back(0);					
+					out.push_back(0);
 				}
 				break;
 			}
@@ -182,9 +182,9 @@ namespace jami
         return out;
 	}
 
-	void PluginInference::setExpectedImageDimensions() 
+	void PluginInference::setExpectedImageDimensions()
 	{
-		
+
 		if (tfModel.dims[1] != 0)
 		{
 			imageWidth = tfModel.dims[1];
@@ -196,23 +196,23 @@ namespace jami
 		if (tfModel.dims[3] != 0)
 		{
 			imageNbChannels = tfModel.dims[3];
-		}	
+		}
 	}
 #endif
 
-	int PluginInference::getImageWidth() const 
+	int PluginInference::getImageWidth() const
 	{ 
 		// Plog::log(Plog::LogPriority::INFO, TAG, "inside getImageWidth()");
 		return imageWidth; 
 	}
 
-	int PluginInference::getImageHeight() const 
+	int PluginInference::getImageHeight() const
 	{ 
 		// Plog::log(Plog::LogPriority::INFO, TAG, "inside getImageHeight()");
-		return imageHeight; 
+		return imageHeight;
 	}
 
-	int PluginInference::getImageNbChannels() const 
+	int PluginInference::getImageNbChannels() const
 	{
 		// Plog::log(Plog::LogPriority::INFO, TAG, "inside getImageNbChannels()");
 		return imageNbChannels;

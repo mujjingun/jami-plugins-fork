@@ -60,7 +60,6 @@ namespace jami
 		// Plog::log(Plog::LogPriority::INFO, TAG, "inside update()");
 		if (isAttached)
 		{
-			std::ostringstream oss;
 			//======================================================================================
 			// GET FRAME ROTATION
 			AVFrameSideData *side_data =
@@ -73,6 +72,7 @@ namespace jami
 				angle = static_cast<int>(av_display_rotation_get(matrix_rotation));
 			}
 
+			std::ostringstream oss;
 			// Plog::log(Plog::LogPriority::INFO, TAG, "step GET RAW FRAME");
 			//======================================================================================
 			// GET RAW FRAME
@@ -93,8 +93,8 @@ namespace jami
 			cv::Mat clone = frame.clone();
 			//======================================================================================
 			// ROTATE THE FRAME
-			// rotateFrame(angle, clone);
-			// rotateFrame(angle, frame);
+			rotateFrame(angle, clone);
+			rotateFrame(angle, frame);
 
 			if (firstRun)
 			{
@@ -129,8 +129,8 @@ namespace jami
 			//======================================================================================
 			// REPLACE AVFRAME DATA WITH FRAME DATA
 
-			// rotateFrame(-angle, clone);
-			// rotateFrame(-angle, frame);
+			rotateFrame(-angle, clone);
+			rotateFrame(-angle, frame);
 
 			// Plog::log(Plog::LogPriority::INFO, TAG, "step REPLACE AVFRAME DATA WITH FRAME DATA");
 			if (bgrFrame && bgrFrame->data[0])

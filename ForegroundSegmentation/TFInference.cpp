@@ -23,14 +23,14 @@
 const char sep = separator();
 const std::string TAG = "FORESEG";
 
-namespace jami 
+namespace jami
     {
     TensorflowInference::TensorflowInference(TFModel tfModel) : tfModel(tfModel) {}
 
-    TensorflowInference::~TensorflowInference() 
+    TensorflowInference::~TensorflowInference()
     { }
 
-    bool TensorflowInference::isAllocated() const 
+    bool TensorflowInference::isAllocated() const
     {
         return allocated;
     }
@@ -211,7 +211,7 @@ namespace jami
 #else
     // Reads a model graph definition from disk, and creates a session object you
     // can use to run it.
-    void TensorflowInference::LoadGraph() 
+    void TensorflowInference::LoadGraph()
     {
         tensorflow::GraphDef graph_def;
         tensorflow::Status load_graph_status = tensorflow::ReadBinaryProto(tensorflow::Env::Default(), tfModel.modelPath, &graph_def);
@@ -219,11 +219,21 @@ namespace jami
             return ; //tensorflow::errors::NotFound("Failed to load compute graph at '",
                                                 //tfModel.modelPath.c_str(), "'");
         }
-        (&session)->reset(tensorflow::NewSession(tensorflow::SessionOptions()));
+
+        PluginParameters* parameters = getGlobalPluginParameters();
+
+        tensorflow::SessionOptions options;
+        if(parameters->useGPU)
+        {
+            options.config.mutable_gpu_options()->set_allow_growth(true);
+            options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(0.5);
+        }
+        (&session)->reset(tensorflow::NewSession(options));
         tensorflow::Status session_create_status = session->Create(graph_def);
         if (!session_create_status.ok()) {
             return ;
         }
+
         allocated = true;
     }
 
@@ -233,7 +243,7 @@ namespace jami
         {
             // Actually run the image through the model.
             tensorflow::Status run_status = session->Run({{tfModel.inputLayer, imageTensor}}, {tfModel.outputLayer}, {}, &outputs);
-            if (!run_status.ok())                     
+            if (!run_status.ok())
             {
                 Plog::log(Plog::LogPriority::INFO, "RUN GRAPH", "A problem occured when running the graph");
             }
@@ -244,12 +254,12 @@ namespace jami
         }
     }
 
-    void TensorflowInference::init() 
+    void TensorflowInference::init()
     {
         // Loading the model
         Plog::log(Plog::LogPriority::INFO, "TENSOR", "INSIDE THE INIT" );
         LoadGraph();
-    } 
+    }
 #endif
- 
+
 }

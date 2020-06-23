@@ -9,10 +9,10 @@
 #include <vector>
 
 #ifdef TFLITE
-    #include <tensorflow/lite/interpreter.h>
-    #include <tensorflow/lite/delegates/nnapi/nnapi_delegate.h>
+#include <tensorflow/lite/interpreter.h>
+#include <tensorflow/lite/delegates/nnapi/nnapi_delegate.h>
 
-namespace tflite 
+namespace tflite
 {
     class FlatBufferModel;
     class Interpreter;
@@ -20,29 +20,31 @@ namespace tflite
 } // namespace tflite
 
 #else
-    #include <tensorflow/core/lib/core/status.h>
-    #include <tensorflow/core/public/session.h>
-    #include <tensorflow/core/framework/tensor.h>
-    #include <tensorflow/core/framework/types.pb.h>
-    #include <tensorflow/core/platform/init_main.h>
+#include <tensorflow/core/lib/core/status.h>
+#include <tensorflow/core/public/session.h>
+#include <tensorflow/core/framework/tensor.h>
+#include <tensorflow/core/framework/types.pb.h>
+#include <tensorflow/core/platform/init_main.h>
+#include <tensorflow/core/protobuf/config.pb.h>
 
-namespace tensorflow 
+namespace tensorflow
 {
     class Tensor;
     class Status;
     class GraphDef;
     class Session;
+    struct SessionOptions;
     class TensorShape;
     class Env;
     enum DataType:int;
-} // namespace namespace tensorflow 
+} // namespace namespace tensorflow
 
 #endif
 
 
-namespace jami 
+namespace jami
 {
-    class TensorflowInference 
+    class TensorflowInference
     {
         public:
             /**
@@ -112,7 +114,7 @@ namespace jami
             std::unique_ptr<tflite::Interpreter> interpreter;
 #else
             std::unique_ptr<tensorflow::Session> session;
-            std::vector<tensorflow::Tensor> outputs;            
+            std::vector<tensorflow::Tensor> outputs;
 #endif
             TFModel tfModel;
             std::vector<std::string> labels;

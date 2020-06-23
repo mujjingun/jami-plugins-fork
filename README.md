@@ -50,7 +50,7 @@ For Android: (Tensorflow Lite)
     Dependencies:
         1 - Android NDK 18r
 
-    $ ./configure 
+    $ ./configure
         >> Do you wish to build TensorFlow with XLA JIT support? [Y/n]: n
         >> Do you wish to download a fresh release of clang? (Experimental) [y/N]: y
         >> Would you like to interactively configure ./WORKSPACE for Android builds? [y/N]: y
@@ -58,19 +58,19 @@ For Android: (Tensorflow Lite)
 
     $ bazel build //tensorflow/lite:libtensorflowlite.so --crosstool_top=//external:android/crosstool --cpu=armeabi-v7a --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cxxopt="-std=c++11"
 
-    $ bazel build //tensorflow/lite:libtensorflowlite.so --crosstool_top=//external:android/crosstool --cpu=arm64-v8a --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cxxopt="-std=c++11"    
+    $ bazel build //tensorflow/lite:libtensorflowlite.so --crosstool_top=//external:android/crosstool --cpu=arm64-v8a --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cxxopt="-std=c++11"
 
     $ bazel build //tensorflow/lite:libtensorflowlite.so --crosstool_top=//external:android/crosstool --cpu=x86_64  --host_crosstool_top=@bazel_tools//tools/cpp:toolchain --cxxopt="-std=c++11"
 
 For Linux:
 
-    $ ./configure 
+    $ ./configure
 
     For TFLite:
-    $ bazel build --config=v1 --define framework_shared_object=false //tensorflow:libtensorflow_cc.so
+    $ bazel build //tensorflow/lite:libtensorflowlite.so
     or
     For Tensorflow C++ API:
-    $ bazel build //tensorflow/lite:libtensorflowlite.so
+    $ bazel build --config=v1 --define framework_shared_object=false //tensorflow:libtensorflow_cc.so
     
     OBS.: If you want to build Tensorflow C++ API with GPU suport, be sure to have a CUDA capable GPU and that you have 
     followed all installation steps for the Nvidia drivers, CUDA Toolkit, CUDNN, Tensor RT, that their versions 
@@ -87,7 +87,7 @@ TENSORFLOWLITE INCLUDES ASSEMBLE INSTRUCTIONS
         "<tensorflow>/bazel-genfiles/tensorflow/lite/"
     or at:
         "<tensorflow>/bazel-out/<cpu>-opt/bin/tensorflow/lite/"
-    (cpu may be "armeabi-v7a", "arm64-v8a", "x86_64" or "k8" depending on the build realized)
+    (cpu may be "armeabi-v7a", "arm64-v8a", "x86_64", "x86" or "k8" depending on the build realized)
     The lib in the first folder is overwritten after each build.
     The lib in the second folder is not.
 
@@ -185,7 +185,7 @@ TENSORFLOW C++ API INCLUDES ASSEMBLE INSTRUCTIONS
                         core/
                             -> keep folder structure and copy all header files from "<tensorflow>/
                             tensorflow/core"
-                            -> copy all proto header files (.pb.h) from 
+                            -> copy all proto header files (.pb.h) from
                             "<tensorflow>/bazel-genfiles/tensorflow/core/"
                     absl/
                         -> keep folder structure and copy all header and .inc files from "<tensorflow>/
@@ -202,6 +202,6 @@ TENSORFLOW C++ API INCLUDES ASSEMBLE INSTRUCTIONS
                                     -> keep folder structure and copy all files from "<tensorflow>/bazel-tensorflow/external/eigen_archive/unsupported/Eigen/"
                                     CXX11/
                                         -> copy "<tensorflow>/third_party/eigen3/unsupported/Eigen/CXX11/FixedPoint"
-                                        -> copy "<tensorflow>/third_party/eigen3/unsupported/Eigen/CXX11/src/" 
+                                        -> copy "<tensorflow>/third_party/eigen3/unsupported/Eigen/CXX11/src/"
 
 --> Be aware to apply any needed changes to the build.sh file so that the plugin can be build against the standart tensorflow_cc library.

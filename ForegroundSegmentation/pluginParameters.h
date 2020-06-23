@@ -8,12 +8,14 @@
 struct PluginParameters {
     std::string stream = "out";
 #ifdef TFLITE
+    bool useGPU = false; //only used when on desktop
 #ifdef __ANDROID
     std::string model = "model_256_Qlatency.tflite";
 #else
     std::string model = "model_256_F_16.tflite";
-#endif    
+#endif
 #else
+    bool useGPU = true; //only used when on desktop
     std::string model = "frozen_inference_graph.pb";
 #endif //TFLITE
     std::string image = "background2.png";
