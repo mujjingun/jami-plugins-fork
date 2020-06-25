@@ -1,3 +1,23 @@
+/*
+ *  Copyright (C) 2004-2020 Savoir-faire Linux Inc.
+ *
+ *  Author: Aline Gondim Santos <aline.gondimsantos@savoirfairelinux.com>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+ */
+
 #include "videoSubscriber.h"
 // Use for display rotation matrix
 extern "C" {
@@ -92,9 +112,8 @@ namespace jami
 
 			cv::Mat clone = frame.clone();
 			//======================================================================================
-			// ROTATE THE FRAME
-			rotateFrame(angle, clone);
-			rotateFrame(angle, frame);
+
+			pluginProcessor.setBackgroundRotation(angle);
 
 			if (firstRun)
 			{
@@ -103,7 +122,7 @@ namespace jami
 				fcopy.resizedSize = cv::Size{pluginProcessor.pluginInference.getImageWidth(), pluginProcessor.pluginInference.getImageHeight()};
 
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
-				// cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.originalSize);
+				pluginProcessor.rotateFrame(angle, fcopy.resizedFrameRGB);
 				cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.resizedSize);
 
 				firstRun = false;
@@ -116,21 +135,23 @@ namespace jami
 				// Plog::log(Plog::LogPriority::INFO, TAG, "step newFrame");
 				std::lock_guard<std::mutex> l(inputLock);
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
+				pluginProcessor.rotateFrame(angle, fcopy.resizedFrameRGB);
 				newFrame = true;
 				inputCv.notify_all();
 			}
-
+			// rotateFrame(-angle, clone);
 			// Plog::log(Plog::LogPriority::INFO, TAG, "step result");
 			fcopy.predictionsFrameBGR = frame;
 			fcopy.predictionsResizedFrameBGR = fcopy.resizedFrameRGB.clone();
+			pluginProcessor.rotateFrame(-angle, fcopy.predictionsResizedFrameBGR);
 			pluginProcessor.drawMaskOnFrame(fcopy.predictionsFrameBGR, fcopy.predictionsResizedFrameBGR,
-												   pluginProcessor.computedMask, bgrFrame->linesize[0]);
+												   pluginProcessor.computedMask, bgrFrame->linesize[0], angle);
 
 			//======================================================================================
 			// REPLACE AVFRAME DATA WITH FRAME DATA
 
-			rotateFrame(-angle, clone);
-			rotateFrame(-angle, frame);
+
+			// rotateFrame(-angle, frame);
 
 			// Plog::log(Plog::LogPriority::INFO, TAG, "step REPLACE AVFRAME DATA WITH FRAME DATA");
 			if (bgrFrame && bgrFrame->data[0])
@@ -194,25 +215,5 @@ namespace jami
 	{
 		running = false;
 		inputCv.notify_all();
-	}
-
-	void VideoSubscriber::rotateFrame(int angle, cv::Mat &mat)
-	{
-		if (angle != 0)
-		{
-			switch (angle)
-			{
-				case -90:
-					cv::rotate(mat, mat, cv::ROTATE_90_COUNTERCLOCKWISE);
-					break;
-				case 180:
-				case -180:
-					cv::rotate(mat, mat, cv::ROTATE_180);
-					break;
-				case 90:
-					cv::rotate(mat, mat, cv::ROTATE_90_CLOCKWISE);
-					break;
-			}
-		}
 	}
 }

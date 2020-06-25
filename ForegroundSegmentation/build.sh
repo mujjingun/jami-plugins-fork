@@ -1,3 +1,23 @@
+# /*
+#  *  Copyright (C) 2004-2020 Savoir-faire Linux Inc.
+#  *
+#  *  Author: Aline Gondim Santos <aline.gondimsantos@savoirfairelinux.com>
+#  *
+#  *  This program is free software; you can redistribute it and/or modify
+#  *  it under the terms of the GNU General Public License as published by
+#  *  the Free Software Foundation; either version 3 of the License, or
+#  *  (at your option) any later version.
+#  *
+#  *  This program is distributed in the hope that it will be useful,
+#  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  *  GNU General Public License for more details.
+#  *
+#  *  You should have received a copy of the GNU General Public License
+#  *  along with this program; if not, write to the Free Software
+#  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+#  */
+ 
 #! /bin/bash
 # Build the plugin for the project
 if [ -z $DAEMON ]; then
@@ -62,20 +82,6 @@ cp ${LIBS_DIR}/_tensorflow_distribution/lib/${CONTRIB_PLATFORM}/libtensorflowlit
 cp /usr/lib/${CONTRIB_PLATFORM}/libswscale.so.4 lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libavutil.so.55 lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libpng16.so.16 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libX11.so.6 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libdrm.so.2 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libvdpau.so.1 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libva.so.2 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libva-x11.so.2 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libva-drm.so.2 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libxcb.so.1 lib/$CONTRIB_PLATFORM_CURT
-# cp /lib/${CONTRIB_PLATFORM}/libz.so.1 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libxcb.so.1 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libXext.so.6 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libXfixes.so.3 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libXau.so.6 lib/$CONTRIB_PLATFORM_CURT
-# cp /usr/lib/${CONTRIB_PLATFORM}/libXdmcp.so.6 lib/$CONTRIB_PLATFORM_CURT
-# libz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x00007f4828383000)
 
 zip -r ${JPL_FILE_NAME} data manifest.json lib
 mv ${JPL_FILE_NAME} ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl/

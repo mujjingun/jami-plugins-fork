@@ -1,3 +1,23 @@
+/*
+ *  Copyright (C) 2004-2020 Savoir-faire Linux Inc.
+ *
+ *  Author: Aline Gondim Santos <aline.gondimsantos@savoirfairelinux.com>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+ */
+
 #include "pluginProcessor.h"
 // System includes
 #include <cstring>
@@ -78,6 +98,34 @@ namespace jami
 	}
 #endif //TFLITE
 
+	int PluginProcessor::getBackgroundRotation()
+	{
+		return backgroundRotation;
+	}
+
+	void PluginProcessor::setBackgroundRotation(int angle)
+	{
+		if (backgroundRotation != angle && (backgroundRotation - angle) != 0)
+		{
+			switch (backgroundRotation - angle)
+			{
+				case 90:
+					cv::rotate(backgroundImage, backgroundImage, cv::ROTATE_90_CLOCKWISE);
+					break;
+				case 180:
+					cv::rotate(backgroundImage, backgroundImage, cv::ROTATE_180);
+					break;
+				case -180:
+					cv::rotate(backgroundImage, backgroundImage, cv::ROTATE_180);
+					break;
+				case -90: 
+					cv::rotate(backgroundImage, backgroundImage, cv::ROTATE_90_COUNTERCLOCKWISE);
+					break;
+			}
+			backgroundRotation = angle;
+		}
+	}
+
 	void PluginProcessor::computePredictions() 
 	{
 		Plog::log(Plog::LogPriority::INFO, TAG, "inside computePredictions()");
@@ -122,7 +170,7 @@ namespace jami
 	}
 
 void PluginProcessor::drawMaskOnFrame(cv::Mat &frame,
-		cv::Mat &frameReduced, std::vector<float>computedMask, int lineSize)
+		cv::Mat &frameReduced, std::vector<float>computedMask, int lineSize, int angle)
 	{
 		// Plog::log(Plog::LogPriority::INFO, TAG, "inside drawMaskOnFrame()");
 		if (computedMask.empty())
@@ -167,6 +215,7 @@ void PluginProcessor::drawMaskOnFrame(cv::Mat &frame,
         cv::Mat maskImg(pluginInference.getImageHeight(), pluginInference.getImageWidth(),
 							CV_32FC1, mFloatMask.data());
 
+		rotateFrame(-angle, maskImg);
 		cv::resize(maskImg, maskImg, cv::Size(frameReduced.cols+2*absOFFSETX, frameReduced.rows+2*absOFFSETY));
 
 		kSize = cv::Size(maskImg.cols*0.05, maskImg.rows*0.05);
@@ -215,5 +264,27 @@ void PluginProcessor::drawMaskOnFrame(cv::Mat &frame,
 		computedMask3 = std::vector<float>(computedMask2.begin(), computedMask2.end());
 		computedMask2 = std::vector<float>(computedMask1.begin(), computedMask1.end());
 		computedMask1 = std::vector<float>(computedMask.begin(), computedMask.end());
+	}
+
+	void PluginProcessor::rotateFrame(int angle, cv::Mat &mat)
+	{
+		if (angle != 0)
+		{
+			switch (angle)
+			{
+				case -90:
+					cv::rotate(mat, mat, cv::ROTATE_90_COUNTERCLOCKWISE);
+					break;
+				case 180:
+					cv::rotate(mat, mat, cv::ROTATE_180);
+					break;
+				case -180:
+					cv::rotate(mat, mat, cv::ROTATE_180);
+					break;
+				case 90:
+					cv::rotate(mat, mat, cv::ROTATE_90_CLOCKWISE);
+					break;
+			}
+		}
 	}
 } // namespace jami
