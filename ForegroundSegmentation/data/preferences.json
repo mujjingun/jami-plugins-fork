@@ -15,9 +15,9 @@
         "key": "modellist",
         "title": "Model to load",
         "summary": "Select the model to use",
-        "defaultValue": "model_256_Qlatency.tflite",
-        "entries": ["mv2_DLV3_256_MQ", "mv2_DLV3_256_QLATENCY_16", "mv2_DLV3_256_QLATENCY_8"],
-        "entryValues": ["mobilenet_v2_deeplab_v3_256_myquant.tflite", "model_256_Qlatency_16.tflite", "model_256_Qlatency.tflite"]
+        "defaultValue": "frozen_inference_graph.pb",
+        "entries": ["frozen_inference_graph", "mv2_DLV3_256_MQ", "mv2_DLV3_256_QLATENCY_16", "mv2_DLV3_256_QLATENCY_8"],
+        "entryValues": ["frozen_inference_graph", "mobilenet_v2_deeplab_v3_256_myquant.tflite", "model_256_Qlatency_16.tflite", "model_256_Qlatency.tflite"]
     },
     {
         "category" : "ImageBackground",
@@ -25,7 +25,7 @@
         "key": "backgroundlist",
         "title": "Background image",
         "summary": "Select the image background to use",
-        "defaultValue": "background2.png",
+        "defaultValue": "background1.png",
         "entries": ["background1", "background2"],
         "entryValues": ["background1.png", "background2.png"]
     }
