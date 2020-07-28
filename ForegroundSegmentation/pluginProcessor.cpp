@@ -20,6 +20,7 @@
 
 #include "pluginProcessor.h"
 // System includes
+#include <algorithm>
 #include <cstring>
 // OpenCV headers
 #include <opencv2/imgproc.hpp>
@@ -37,33 +38,51 @@ const char sep = separator();
 
 const std::string TAG = "FORESEG";
 
-PluginParameters* mPluginParameters = getGlobalPluginParameters(); 
+PluginParameters* mPluginParameters = getGlobalPluginParameters();
 
-namespace jami 
+namespace jami
 {
 
 	PluginProcessor::PluginProcessor(const std::string &dataPath):
-	pluginInference{TFModel{dataPath + sep + "models/" + mPluginParameters->model}},
-	backgroundPath{dataPath + sep + "backgrounds" + sep + mPluginParameters->image}
+	pluginInference{TFModel{dataPath + sep + "models/" + mPluginParameters->model}}
+	// backgroundPath{dataPath + sep + "backgrounds" + sep + mPluginParameters->image}
 	{
 		initModel();
+		setBackgroundImage(dataPath, mPluginParameters->image);
+	}
+
+	void PluginProcessor::setBackgroundImage(const std::string &dataPath, const std::string &value)
+	{
+		backgroundPath = dataPath + sep + "backgrounds" + sep + value;
+		cv::Size size = cv::Size{0,0};
+
+		if (!backgroundImage.empty())
+			size = backgroundImage.size();
+
 		backgroundImage = cv::imread(backgroundPath);
 		if (backgroundImage.cols == 0)
 		{
         	Plog::log(Plog::LogPriority::ERROR, TAG, "Background image not Loaded");
 		}
+		else
+		{
+        	Plog::log(Plog::LogPriority::INFO, TAG, "Background image Loaded");
+		}
+
 		cv::cvtColor(backgroundImage, backgroundImage, cv::COLOR_BGR2RGB);
 		backgroundImage.convertTo(backgroundImage, CV_32FC3);
-		//TODO: properly resize the background image to maintain background aspect ratio in the output image;
-        Plog::log(Plog::LogPriority::INFO, TAG, mPluginParameters->model);
+		if (size.height)
+		{
+			cv::resize(backgroundImage, backgroundImage, size);
+			backgroundRotation = 0;
+		}
 	}
 
 	void PluginProcessor::initModel()
 	{
-		Plog::log(Plog::LogPriority::INFO, TAG, "inside getImageNbChannels()");
 		try {
 			pluginInference.init();
-		} catch (std::exception& e) 
+		} catch (std::exception& e)
 		{
 			Plog::log(Plog::LogPriority::ERROR, TAG, e.what());
 		}
@@ -76,24 +95,30 @@ namespace jami
 #ifdef TFLITE
 	void PluginProcessor::feedInput(const cv::Mat &frame)
 	{
-		Plog::log(Plog::LogPriority::INFO, TAG, "inside feedInput()");
 		auto pair = pluginInference.getInput();
 		uint8_t *inputPointer = pair.first;
+		// float *inputPointer = pair.first;
 		// Relevant data starts from index 1, dims.at(0) = 1
-		size_t imageWidth = static_cast<size_t>(pair.second[1]);
-		size_t imageHeight = static_cast<size_t>(pair.second[2]);
-		size_t imageNbChannels = static_cast<size_t>(pair.second[3]);
+		size_t imageWidth = static_cast<size_t>(pair.second[0]);
+		size_t imageHeight = static_cast<size_t>(pair.second[1]);
+		size_t imageNbChannels = static_cast<size_t>(pair.second[2]);
+
+		// cv::Mat temp(frame.rows, frame.cols, CV_32FC3, inputPointer);
+		// cv::Mat temp(frame.rows, frame.cols, CV_8UC3, inputPointer);
+		// frame.convertTo(temp, CV_32FC3);
+		// frame.convertTo(temp, CV_8UC3);
+		// temp = temp/127. - 1.;
+
 		std::memcpy(inputPointer, frame.data,
 					imageWidth * imageHeight * imageNbChannels * sizeof(uint8_t));
+		// cv::Mat temp(frame.rows, frame.cols, CV_8UC3, inputPointer);
+		// temp = temp/127. - 1.;
 
 		inputPointer = nullptr;
 	}
 #else
-	void PluginProcessor::feedInput(const cv::Mat &frame) 
+	void PluginProcessor::feedInput(const cv::Mat &frame)
 	{
-		std::ostringstream oss;
-		oss << frame.rows;
-		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 		pluginInference.ReadTensorFromMat(frame);
 	}
 #endif //TFLITE
@@ -118,7 +143,7 @@ namespace jami
 				case -180:
 					cv::rotate(backgroundImage, backgroundImage, cv::ROTATE_180);
 					break;
-				case -90: 
+				case -90:
 					cv::rotate(backgroundImage, backgroundImage, cv::ROTATE_90_COUNTERCLOCKWISE);
 					break;
 			}
@@ -128,7 +153,6 @@ namespace jami
 
 	void PluginProcessor::computePredictions() 
 	{
-		Plog::log(Plog::LogPriority::INFO, TAG, "inside computePredictions()");
 		// Run the graph
 		pluginInference.runGraph();
 		auto predictions = pluginInference.masksPredictions();
@@ -172,51 +196,72 @@ namespace jami
 void PluginProcessor::drawMaskOnFrame(cv::Mat &frame,
 		cv::Mat &frameReduced, std::vector<float>computedMask, int lineSize, int angle)
 	{
-		// Plog::log(Plog::LogPriority::INFO, TAG, "inside drawMaskOnFrame()");
 		if (computedMask.empty())
 		{
 			return;
 		}
-		//TODO: MAKE VARIABLE WITH THE MODEL not the platform
-#ifdef __ANDROID__
-		int absOFFSETY = 4;
-		int absOFFSETX = 4;
-#else
-		int absOFFSETY = 8;
-		int absOFFSETX = 8;
-#endif		
-		int OFFSETY = -absOFFSETY;
-		int OFFSETX = -absOFFSETX;
-		if (computedMask1.empty())
-		{
-			computedMask3 = std::vector<float>(computedMask.size(), 0);
-			computedMask2 = std::vector<float>(computedMask.size(), 0);
-			computedMask1 = std::vector<float>(computedMask.size(), 0);
-		}
 
 		std::vector<float> mFloatMask(computedMask.begin(), computedMask.end());
-		for (size_t i = 0; i < computedMask.size(); i++)
-		{
-			if(computedMask[i] == 15)
-			{
-				computedMask[i] = 255;
-				mFloatMask[i] = 255;
-			}
-			else
-			{
-				computedMask[i] = 0;
-				#ifdef __ANDROID__
-				mFloatMask[i] = (float)(   (int)((0.6 * computedMask1[i] + 0.3 * computedMask2[i] + 0.1 * computedMask3[i])) % 256   );
-				#else
-				mFloatMask[i] = 0.;
-				#endif
-			}
-		}
-        cv::Mat maskImg(pluginInference.getImageHeight(), pluginInference.getImageWidth(),
-							CV_32FC1, mFloatMask.data());
+		int maskSize = static_cast<int> (std::sqrt(computedMask.size()));
+		cv::Mat maskImg(maskSize, maskSize, CV_32FC1, mFloatMask.data());
 
 		rotateFrame(-angle, maskImg);
-		cv::resize(maskImg, maskImg, cv::Size(frameReduced.cols+2*absOFFSETX, frameReduced.rows+2*absOFFSETY));
+		cv::resize(maskImg, maskImg, cv::Size(frameReduced.cols, frameReduced.rows));
+		if (previousMasks[0].empty())
+		{
+			previousMasks[0] = cv::Mat(frameReduced.rows, frameReduced.cols, CV_32FC1, double(0.));
+			previousMasks[1] = cv::Mat(frameReduced.rows, frameReduced.cols, CV_32FC1, double(0.));
+		}
+
+		double m, M;
+		cv::minMaxLoc(maskImg, &m, &M);
+#ifdef TFLITE
+		for (int i = 0; i < maskImg.cols; i++)
+		{
+			for (int j = 0; j < maskImg.rows; j++)
+			{
+				if (maskImg.at<float>(j, i) < 0.4)
+					maskImg.at<float>(j, i) = 0.;
+				else if (maskImg.at<float>(j, i) < 0.7) {
+					float value = maskImg.at<float>(j, i) * 0.6 + previousMasks[0].at<float>(j, i) * 0.3 + previousMasks[1].at<float>(j, i) * 0.1;
+					maskImg.at<float>(j, i) = 0.;
+					if (value > 0.7)
+						maskImg.at<float>(j, i) = 1. ;
+				}
+				else
+					maskImg.at<float>(j, i) = 1.;
+			}
+		}
+#else
+		for (int i = 0; i < maskImg.cols; i++)
+		{
+			for (int j = 0; j < maskImg.rows; j++)
+			{
+				if (M < 2)
+				{
+					maskImg.at<float>(j, i) = 0.;
+				}
+				else
+				{
+					maskImg.at<float>(j, i) = (maskImg.at<float>(j, i) - m)/(M - m);
+
+					if (maskImg.at<float>(j, i) < 0.4)
+						maskImg.at<float>(j, i) = 0.;
+					else if (maskImg.at<float>(j, i) < 0.7) {
+						float value = maskImg.at<float>(j, i) * 0.6 + previousMasks[0].at<float>(j, i) * 0.3 + previousMasks[1].at<float>(j, i) * 0.1;
+						maskImg.at<float>(j, i) = 0.;
+						if (value > 0.7)
+							maskImg.at<float>(j, i) = 1. ;
+					}
+					else
+						maskImg.at<float>(j, i) = 1.;
+				}
+			}
+		}
+		
+#endif
+		previousMasks[1] = previousMasks[0].clone();
+		previousMasks[0] = maskImg.clone();
 
 		kSize = cv::Size(maskImg.cols*0.05, maskImg.rows*0.05);
 		if(kSize.height%2 == 0)
@@ -228,13 +273,13 @@ void PluginProcessor::drawMaskOnFrame(cv::Mat &frame,
 			kSize.width -= 1;
 		}
 
+		cv::dilate(maskImg, maskImg, cv::getStructuringElement(cv::MORPH_CROSS,kSize));
+		maskImg = maskImg * 255.;
 		GaussianBlur (maskImg, maskImg, kSize, 0); //mask from 0 to 255.
-		maskImg = maskImg / 255.; //mask from 0 to 1.
+		maskImg = maskImg / 255.;
+
 		cv::Mat applyMask = frameReduced.clone();
-
-		cv::Rect roi(absOFFSETX+OFFSETX, absOFFSETY+OFFSETY, backgroundImage.cols, backgroundImage.rows); //Create a rect
-		cv::Mat roiMaskImg = maskImg(roi); //Crop the region of interest using above rect
-
+		cv::Mat roiMaskImg = maskImg.clone();
 		cv::Mat roiMaskImgComplementary = 1. - roiMaskImg; //mask from 1. to 0
 
 		std::vector<cv::Mat> channels;
@@ -261,9 +306,6 @@ void PluginProcessor::drawMaskOnFrame(cv::Mat &frame,
 		cv::resize(applyMask, applyMask, cv::Size(frame.cols, frame.rows));
 
 		copyByLine(frame.data, applyMask.data, lineSize, cv::Size(frame.cols, frame.rows));
-		computedMask3 = std::vector<float>(computedMask2.begin(), computedMask2.end());
-		computedMask2 = std::vector<float>(computedMask1.begin(), computedMask1.end());
-		computedMask1 = std::vector<float>(computedMask.begin(), computedMask.end());
 	}
 
 	void PluginProcessor::rotateFrame(int angle, cv::Mat &mat)

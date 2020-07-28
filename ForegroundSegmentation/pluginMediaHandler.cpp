@@ -24,6 +24,8 @@
 const char sep = separator();
 const std::string TAG = "FORESEG";
 
+#define NAME "Foreground Segmentation"
+
 namespace jami
 {
 	PluginMediaHandler::PluginMediaHandler(std::map<std::string, std::string>&& ppm, std::string &&datapath):
@@ -31,6 +33,7 @@ namespace jami
 	{
     	setGlobalPluginParameters(ppm_);
     	setId(datapath_);
+		// setName(NAME);
 		mVS = std::make_shared<VideoSubscriber>(datapath_);
 	}
 
@@ -54,8 +57,7 @@ namespace jami
 			oss << "got my sent image attached" << std::endl;
 		} else if (data.type == StreamType::video && data.direction && data.direction == preferredStreamDirection)
 		{
-			subject->attach(mVS.get()); // the image i receive from the others on the call
-			oss << "got my received image attached" << std::endl;
+			subject->attach(mVS.get()); // the image I receive from the others on the call
 		}
 		Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 	}
@@ -63,7 +65,7 @@ namespace jami
 	std::map<std::string, std::string> PluginMediaHandler::getCallMediaHandlerDetails()
 	{
 		std::map<std::string, std::string> mediaHandlerDetails = {};
-		mediaHandlerDetails["name"] = "Foreground Segmentation";
+		mediaHandlerDetails["name"] = NAME;
 		mediaHandlerDetails["iconPath"] = datapath_ + sep + "icon.png";
 		mediaHandlerDetails["pluginId"] = id();
 
@@ -73,7 +75,18 @@ namespace jami
 
 	void PluginMediaHandler::setPreferenceAttribute(const std::string &key, const std::string &value)
 	{
-
+		auto it = ppm_.find(key);
+		if (it != ppm_.end())
+		{
+			if (ppm_[key] != value)
+			{
+				ppm_[key] = value;
+				if (key == "backgroundlist")
+				{
+					mVS->setBackground(dataPath(), value);
+				}
+			}
+		}
 	}
 
 	bool PluginMediaHandler::preferenceMapHasKey(const std::string &key)

@@ -25,15 +25,13 @@
 #include <vector>
 #include "pluginParameters.h"
 
-struct TFModelConfiguration 
+struct TFModelConfiguration
 {
     TFModelConfiguration(std::string& model): modelPath{model} {}
     std::string modelPath;
     std::vector<unsigned int> normalizationValues;
-    std::vector<int> dims = {1,256,256,3}; //model Input dimensions
+    std::vector<int> dims = {1, 385, 385, 3}; //model Input dimensions
     unsigned int numberOfRuns = 1;
-
-
     // TensorflowLite specific settings
 
 #ifdef TFLITE
@@ -48,19 +46,19 @@ struct TFModelConfiguration
     // User defined details
     bool inputFloating = false;
 #else
-    std::string inputLayer = "ImageTensor";
-    std::string outputLayer = "ArgMax";
+    std::string inputLayer = "sub_2";
+    std::string outputLayer = "float_segments";
 #endif // TFLITE
 
 };
 
-struct TFModel : TFModelConfiguration 
+struct TFModel : TFModelConfiguration
 {
     TFModel(std::string&& model, std::string&& labels): TFModelConfiguration(model), labelsPath{labels}{}
     TFModel(std::string& model, std::string& labels): TFModelConfiguration(model), labelsPath{labels}{}
     TFModel(std::string&& model): TFModelConfiguration(model) {}
     TFModel(std::string& model): TFModelConfiguration(model) {}
-    
+
     std::string labelsPath = " ";
     unsigned int labelsPadding = 16;
 };

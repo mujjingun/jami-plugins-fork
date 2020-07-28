@@ -17,12 +17,22 @@
 #  *  along with this program; if not, write to the Free Software
 #  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
 #  */
- 
+
 #! /bin/bash
 # Build the plugin for the project
 if [ -z $DAEMON ]; then
     DAEMON="./../../daemon"
     echo "DAEMON not provided, building for ${DAEMON}"
+fi
+
+if [ -z $CUDALIBS ]; then
+    CUDALIBS=~/anaconda3/envs/tf114/lib/
+    echo "CUDALIBS not provided, building for ${CUDALIBS}"
+fi
+
+if [ -z $PROCESSOR ]; then
+    PROCESSOR=GPU
+    echo "PROCESSOR not defined, building for GPU"
 fi
 
 PLUGIN_NAME="foregroundsegmentation"
@@ -42,12 +52,13 @@ mkdir -p lib/${CONTRIB_PLATFORM_CURT}
 mkdir -p ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl
 
 # Compile
-clang++ -std=c++14 -shared -fPIC \
+clang++ -std=c++17 -shared -fPIC \
 -Wl,-Bsymbolic,-rpath,"\${ORIGIN}" \
 -Wall -Wextra \
 -Wno-unused-variable \
 -Wno-unused-function \
 -Wno-unused-parameter \
+-D${PROCESSOR} \
 -I"." \
 -I${DAEMON_SRC} \
 -I"${CONTRIB_PATH}/${CONTRIB_PLATFORM}/include" \
@@ -81,6 +92,27 @@ cp ${LIBS_DIR}/_tensorflow_cc/lib/${CONTRIB_PLATFORM}-gpu61/libtensorflow_cc.so 
 cp /usr/lib/${CONTRIB_PLATFORM}/libswscale.so.4 lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libavutil.so.55 lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libpng16.so.16 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcudart.so.10.0 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcublas.so.10.0 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcufft.so.10.0 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcurand.so.10.0 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcusolver.so.10.0 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcusparse.so.10.0 lib/$CONTRIB_PLATFORM_CURT
+cp ${CUDALIBS}libcudnn.so.7 lib/$CONTRIB_PLATFORM_CURT
+
+mkdir ./data/models
+if [ $PROCESSOR = GPU ]
+then
+echo "Copying GPU model and preferences"
+cp ./modelsSRC/mModel-resnet50float.pb ./data/models/mModel.pb
+cp ./preferences-gpu.json ./data/preferences.json
+elif [ $PROCESSOR = CPU ]
+then
+echo "Copying CPU model and preferences"
+echo "This configuration is not indicated, please use build.sh for CPU plugin"
+cp ./modelsSRC/mModel-resnet50float.pb ./data/models/mModel.pb
+cp ./preferences-gpu.json ./data/preferences.json
+fi
 
 zip -r ${JPL_FILE_NAME} data manifest.json lib
 mv ${JPL_FILE_NAME} ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl/
@@ -88,3 +120,5 @@ mv ${JPL_FILE_NAME} ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl/
 # Cleanup
 # Remove lib after compilation
 rm -rf lib
+rm ./data/models/mModel.pb
+rm ./data/preferences.json

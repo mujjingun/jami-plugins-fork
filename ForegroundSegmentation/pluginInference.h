@@ -56,6 +56,7 @@ namespace jami
 			 * The necessary checks to make your data size match the input one
 			 */
 			std::pair<uint8_t *, std::vector<int>> getInput();
+			// std::pair<float *, std::vector<int>> getInput();
 
 #else
 			void ReadTensorFromMat(const cv::Mat& image);

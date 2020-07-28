@@ -66,14 +66,13 @@ namespace jami
 			void drawMaskOnFrame(cv::Mat &frame, cv::Mat &frameReduced, std::vector<float>computedMask, int lineSize, int angle);
 			int getBackgroundRotation();
 			void setBackgroundRotation(int angle);
+			void setBackgroundImage(const std::string& dataPath, const std::string& value);
             void rotateFrame(int angle, cv::Mat &mat);
 
 			// Output predictions
 			std::vector<float> computedMask;
-			std::vector<float> computedMask1;
-			std::vector<float> computedMask2;
-			std::vector<float> computedMask3;
 
+			cv::Mat previousMasks[2];
             cv::Mat backgroundImage;
 
 			cv::Size kSize;

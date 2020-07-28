@@ -42,7 +42,7 @@ mkdir -p lib/${CONTRIB_PLATFORM_CURT}
 mkdir -p ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl
 
 # Compile
-clang++ -std=c++14 -shared -fPIC \
+clang++ -std=c++17 -shared -fPIC \
 -Wl,-Bsymbolic,-rpath,"\${ORIGIN}" \
 -Wall -Wextra \
 -Wno-unused-variable \
@@ -78,10 +78,14 @@ pluginParameters.cpp \
 # (above) Always put avutil after all other ffmpeg libs
 # (above) Always put png after all other libs
 
+mkdir ./data/models
 cp ${LIBS_DIR}/_tensorflow_distribution/lib/${CONTRIB_PLATFORM}/libtensorflowlite.so lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libswscale.so.4 lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libavutil.so.55 lib/$CONTRIB_PLATFORM_CURT
 cp /usr/lib/${CONTRIB_PLATFORM}/libpng16.so.16 lib/$CONTRIB_PLATFORM_CURT
+
+cp ./modelsSRC/mModel-mobilenetQuantWeightsActivationsDefault.tflite ./data/models/mModel.tflite
+cp ./preferences-cpu.json ./data/preferences.json
 
 zip -r ${JPL_FILE_NAME} data manifest.json lib
 mv ${JPL_FILE_NAME} ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl/
@@ -89,3 +93,4 @@ mv ${JPL_FILE_NAME} ${DESTINATION_PATH}/${CONTRIB_PLATFORM}/jpl/
 # Cleanup
 # Remove lib after compilation
 rm -rf lib
+rm -r ./data/models/

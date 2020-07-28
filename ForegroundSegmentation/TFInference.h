@@ -97,7 +97,8 @@ namespace jami
 
 #else
             void LoadGraph();
-			tensorflow::Tensor imageTensor = tensorflow::Tensor(tensorflow::DataType::DT_UINT8, tensorflow::TensorShape({ 1, 256, 256, 3 }));
+			// tensorflow::Tensor imageTensor = tensorflow::Tensor(tensorflow::DataType::DT_UINT8, tensorflow::TensorShape({ 1, 256, 256, 3 }));
+            tensorflow::Tensor imageTensor;
 
 #endif //TFLITE
 

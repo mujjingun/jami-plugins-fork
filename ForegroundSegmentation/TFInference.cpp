@@ -23,6 +23,7 @@
 #include <fstream>
 #include <numeric>
 #include <iostream>
+#include <stdlib.h>
 
 
 #ifdef TFLITE 
@@ -34,7 +35,9 @@
     #include <tensorflow/lite/model.h>
     #include <tensorflow/lite/optional_debug_tools.h>
 #else
-    #include <tensorflow/core/framework/graph.pb.h>
+    #include <tensorflow/core/graph/graph.h>
+    // #include <tensorflow/core/framework/graph.pb.h>
+    // #include <tensorflow/core/framework/node_def.pb.h>
     #include <tensorflow/core/platform/env.h>
 #endif //TFLITE
 
@@ -55,27 +58,27 @@ namespace jami
         return allocated;
     }
 
-#ifdef TFLITE 
+#ifdef TFLITE
 
-    void TensorflowInference::loadModel() 
+    void TensorflowInference::loadModel()
     {
 		Plog::log(Plog::LogPriority::INFO, TAG, "inside loadModel()");
         flatbufferModel = tflite::FlatBufferModel::BuildFromFile(tfModel.modelPath.c_str());
-        if (!flatbufferModel) 
+        if (!flatbufferModel)
         {
             std::runtime_error("Failed to load the model file");
         }
         Plog::log(Plog::LogPriority::INFO, "TENSOR", "MODEL LOADED" );
 
     }
-    void TensorflowInference::buildInterpreter() 
+    void TensorflowInference::buildInterpreter()
     {
 		Plog::log(Plog::LogPriority::INFO, TAG, "inside buildInterpreter()");
         // Build the interpreter
         tflite::ops::builtin::BuiltinOpResolver resolver;
         tflite::InterpreterBuilder builder(*flatbufferModel, resolver);
         builder(&interpreter);
-        if(interpreter) 
+        if(interpreter)
         {
             setInterpreterSettings();
             Plog::log(Plog::LogPriority::INFO, "TENSOR", "INTERPRETER BUILT" );
@@ -84,7 +87,7 @@ namespace jami
             {
                     TfLiteDelegate* optionalNnApiDelegate = tflite::NnApiDelegate();
                     // optionalNnApiDelegate = std::make_unique<TfLiteDelegate*>(tflite::NnApiDelegate());
-                    
+
                     // if (interpreter->ModifyGraphWithDelegate(*(optionalNnApiDelegate.get())) != kTfLiteOk)
                     if (interpreter->ModifyGraphWithDelegate(optionalNnApiDelegate) != kTfLiteOk)
                     {
@@ -103,19 +106,19 @@ namespace jami
         }
     }
 
-    void TensorflowInference::allocateTensors() 
+    void TensorflowInference::allocateTensors()
     {
-        if (interpreter->AllocateTensors() != kTfLiteOk) 
+        if (interpreter->AllocateTensors() != kTfLiteOk)
         {
             std::runtime_error("Failed to allocate tensors!");
-        } else 
+        } else
         {
             Plog::log(Plog::LogPriority::INFO, "TENSOR", "TENSORS ALLOCATED" );
             allocated = true;
         }
     }
 
-    void TensorflowInference::describeModelTensors() const 
+    void TensorflowInference::describeModelTensors() const
     {
         //PrintInterpreterState(interpreter.get());
         std::ostringstream oss;
@@ -137,7 +140,7 @@ namespace jami
         // get input dimension from the input tensor metadata
         // assuming one input only
 
-        for (size_t i = 0; i < inputs.size(); i++) 
+        for (size_t i = 0; i < inputs.size(); i++)
         {
             std::stringstream ss;
             ss << "Input  " << i << "   ➛ ";
@@ -149,7 +152,7 @@ namespace jami
         Plog::log(Plog::LogPriority::INFO, "TENSOR", oss.str() );
         // get input dimension from the input tensor metadata
         // assuming one input only
-        for (size_t i = 0; i < outputs.size(); i++) 
+        for (size_t i = 0; i < outputs.size(); i++)
         {
             std::stringstream ss;
             ss << "Output " << i << "   ➛ ";
@@ -157,7 +160,7 @@ namespace jami
         }
     }
 
-    void TensorflowInference::setInterpreterSettings() 
+    void TensorflowInference::setInterpreterSettings()
     {
         // interpreter->UseNNAPI(tfModel.useNNAPI);
         interpreter->SetAllowFp16PrecisionForFp32(tfModel.allowFp16PrecisionForFp32);
@@ -165,19 +168,19 @@ namespace jami
         interpreter->SetNumThreads(static_cast<int>(tfModel.numberOfThreads));
     }
 
-    void TensorflowInference::describeTensor(std::string prefix, int index) const 
+    void TensorflowInference::describeTensor(std::string prefix, int index) const
     {
         std::vector<int> dimensions = getTensorDimensions(index);
         size_t nbDimensions = dimensions.size();
 
         std::ostringstream tensorDescription;
         tensorDescription << prefix;
-        for (size_t i = 0; i < nbDimensions; i++) 
+        for (size_t i = 0; i < nbDimensions; i++)
         {
             if (i == dimensions.size() - 1)
             {
                 tensorDescription << dimensions[i];
-            } else 
+            } else
             {
                 tensorDescription << dimensions[i] << " x ";
             }
@@ -187,13 +190,13 @@ namespace jami
     }
 
     std::vector<int>
-    TensorflowInference::getTensorDimensions(int index) const 
+    TensorflowInference::getTensorDimensions(int index) const
     {
         TfLiteIntArray *dims = interpreter->tensor(index)->dims;
         size_t size = static_cast<size_t>(interpreter->tensor(index)->dims->size);
         std::vector<int> result;
         result.reserve(size);
-        for (size_t i = 0; i != size; i++) 
+        for (size_t i = 0; i != size; i++)
         {
             result.push_back(dims->data[i]);
         }
@@ -203,30 +206,24 @@ namespace jami
         return result;
     }
 
-    void TensorflowInference::runGraph() 
+    void TensorflowInference::runGraph()
     {
-		Plog::log(Plog::LogPriority::INFO, TAG, "inside runGraph()");
-        for (size_t i = 0; i < tfModel.numberOfRuns; i++) 
-        {          
-            if (interpreter->Invoke() != kTfLiteOk)                 
+        for (size_t i = 0; i < tfModel.numberOfRuns; i++)
+        {
+            if (interpreter->Invoke() != kTfLiteOk)
             {
                 Plog::log(Plog::LogPriority::INFO, "RUN GRAPH", "A problem occured when running the graph");
-            }
-            else
-            {
-                Plog::log(Plog::LogPriority::INFO, "RUN GRAPH", "TF RUN OK");
             }
         }
     }
 
-    void TensorflowInference::init() 
+    void TensorflowInference::init()
     {
         // Loading the model
-        Plog::log(Plog::LogPriority::INFO, TAG, "inside init()" );   
         loadModel();
         buildInterpreter();
         describeModelTensors();
-    }  
+    }
 
 #else
     // Reads a model graph definition from disk, and creates a session object you
@@ -236,9 +233,19 @@ namespace jami
         tensorflow::GraphDef graph_def;
         tensorflow::Status load_graph_status = tensorflow::ReadBinaryProto(tensorflow::Env::Default(), tfModel.modelPath, &graph_def);
         if (!load_graph_status.ok()) {
+            allocated = false;
+            Plog::log(Plog::LogPriority::INFO, "LOAD GRAPH", "A problem occured when loading the graph");
             return ; //tensorflow::errors::NotFound("Failed to load compute graph at '",
                                                 //tfModel.modelPath.c_str(), "'");
         }
+        Plog::log(Plog::LogPriority::INFO, "LOAD GRAPH", "graph loaded");
+
+        // Plog::log(Plog::LogPriority::INFO, "GRAPH SIZE: ", std::to_string(graph_def.node_size()));
+        // for (auto& node : *graph_def.mutable_node())
+        // {
+        //     Plog::log(Plog::LogPriority::INFO, "GRAPH NODE: ", node.name().c_str());
+        //     // Plog::log(Plog::LogPriority::INFO, "\tNODE SIZE: ", node.().c_str());
+        // }
 
         PluginParameters* parameters = getGlobalPluginParameters();
 
@@ -248,18 +255,26 @@ namespace jami
             options.config.mutable_gpu_options()->set_allow_growth(true);
             options.config.mutable_gpu_options()->set_per_process_gpu_memory_fraction(0.5);
         }
+        else
+        {
+            setenv("CUDA_VISIBLE_DEVICES", "", 1);
+        }
+        
         (&session)->reset(tensorflow::NewSession(options));
         tensorflow::Status session_create_status = session->Create(graph_def);
         if (!session_create_status.ok()) {
+            Plog::log(Plog::LogPriority::INFO, "INIT SESSION", "A problem occured when initializating session");
+            allocated = true;
             return ;
         }
+        Plog::log(Plog::LogPriority::INFO, "INIT SESSION", "session initialized");
 
         allocated = true;
     }
 
-    void TensorflowInference::runGraph() 
+    void TensorflowInference::runGraph()
     {
-        for (size_t i = 0; i < tfModel.numberOfRuns; i++) 
+        for (size_t i = 0; i < tfModel.numberOfRuns; i++)
         {
             // Actually run the image through the model.
             tensorflow::Status run_status = session->Run({{tfModel.inputLayer, imageTensor}}, {tfModel.outputLayer}, {}, &outputs);
@@ -267,17 +282,12 @@ namespace jami
             {
                 Plog::log(Plog::LogPriority::INFO, "RUN GRAPH", "A problem occured when running the graph");
             }
-            else
-            {
-                Plog::log(Plog::LogPriority::INFO, "RUN GRAPH", "TF RUN OK");
-            }
         }
     }
 
     void TensorflowInference::init()
     {
         // Loading the model
-        Plog::log(Plog::LogPriority::INFO, "TENSOR", "INSIDE THE INIT" );
         LoadGraph();
     }
 #endif

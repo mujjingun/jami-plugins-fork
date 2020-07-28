@@ -22,6 +22,7 @@
 // Use for display rotation matrix
 extern "C" {
 #include <libavutil/display.h>
+#include <accel.h>
 }
 
 // Opencv processing
@@ -53,7 +54,7 @@ namespace jami
                 {
                     break;
                 }
-				// Plog::log(Plog::LogPriority::INFO, TAG, "feed");
+
 				pluginProcessor.feedInput(fcopy.resizedFrameRGB);
                 newFrame = false;
                 /** Unclock the mutex, this way we let the other thread
@@ -77,13 +78,15 @@ namespace jami
 
 	void VideoSubscriber::update(jami::Observable<AVFrame *> *, AVFrame *const &iFrame)
 	{
-		// Plog::log(Plog::LogPriority::INFO, TAG, "inside update()");
 		if (isAttached)
 		{
+			AVFrame *pluginFrame = const_cast<AVFrame *>(iFrame);
+			if (firstRun)
+				pluginFrame = transferToMainMemory(incFrame, AV_PIX_FMT_NV12);
 			//======================================================================================
 			// GET FRAME ROTATION
 			AVFrameSideData *side_data =
-				av_frame_get_side_data(iFrame, AV_FRAME_DATA_DISPLAYMATRIX);
+				av_frame_get_side_data(pluginFrame, AV_FRAME_DATA_DISPLAYMATRIX);
 
 			int angle{0};
 			if (side_data)
@@ -92,18 +95,15 @@ namespace jami
 				angle = static_cast<int>(av_display_rotation_get(matrix_rotation));
 			}
 
-			std::ostringstream oss;
-			// Plog::log(Plog::LogPriority::INFO, TAG, "step GET RAW FRAME");
 			//======================================================================================
 			// GET RAW FRAME
 			// Use a non-const Frame
-			AVFrame *incFrame = const_cast<AVFrame *>(iFrame);
 			// Convert input frame to BGR
-			int inputHeight = incFrame->height;
-			int inputWidth = incFrame->width;
+			int inputHeight = pluginFrame->height;
+			int inputWidth = pluginFrame->width;
 
 			fcopy.originalSize = cv::Size{inputWidth, inputHeight};
-            FrameUniquePtr bgrFrame = scaler.convertFormat(incFrame, AV_PIX_FMT_RGB24);
+            FrameUniquePtr bgrFrame = scaler.convertFormat(pluginFrame, AV_PIX_FMT_RGB24);
 			cv::Mat frame =
 				cv::Mat{bgrFrame->height, bgrFrame->width, CV_8UC3, bgrFrame->data[0],
 						static_cast<size_t>(bgrFrame->linesize[0])};
@@ -117,68 +117,61 @@ namespace jami
 
 			if (firstRun)
 			{
-				// Plog::log(Plog::LogPriority::INFO, TAG, "step firstRun");
 				pluginProcessor.pluginInference.setExpectedImageDimensions();
 				fcopy.resizedSize = cv::Size{pluginProcessor.pluginInference.getImageWidth(), pluginProcessor.pluginInference.getImageHeight()};
 
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
 				pluginProcessor.rotateFrame(angle, fcopy.resizedFrameRGB);
+
 				cv::resize(pluginProcessor.backgroundImage, pluginProcessor.backgroundImage, fcopy.resizedSize);
 
 				firstRun = false;
 			}
 
-            auto process_start = std::chrono::system_clock::now();
-
+            // auto process_start = std::chrono::system_clock::now();
 			if (!newFrame)
 			{
-				// Plog::log(Plog::LogPriority::INFO, TAG, "step newFrame");
 				std::lock_guard<std::mutex> l(inputLock);
 				cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
 				pluginProcessor.rotateFrame(angle, fcopy.resizedFrameRGB);
 				newFrame = true;
 				inputCv.notify_all();
 			}
-			// rotateFrame(-angle, clone);
-			// Plog::log(Plog::LogPriority::INFO, TAG, "step result");
+
 			fcopy.predictionsFrameBGR = frame;
 			fcopy.predictionsResizedFrameBGR = fcopy.resizedFrameRGB.clone();
 			pluginProcessor.rotateFrame(-angle, fcopy.predictionsResizedFrameBGR);
 			pluginProcessor.drawMaskOnFrame(fcopy.predictionsFrameBGR, fcopy.predictionsResizedFrameBGR,
 												   pluginProcessor.computedMask, bgrFrame->linesize[0], angle);
+			// pluginProcessor.printMask();
 
 			//======================================================================================
 			// REPLACE AVFRAME DATA WITH FRAME DATA
-
-
-			// rotateFrame(-angle, frame);
-
-			// Plog::log(Plog::LogPriority::INFO, TAG, "step REPLACE AVFRAME DATA WITH FRAME DATA");
 			if (bgrFrame && bgrFrame->data[0])
 			{
 				uint8_t* frameData = bgrFrame->data[0];
 				if(angle == 90 || angle == -90)
 				{
-					std::memmove(frameData, fcopy.predictionsFrameBGR.data, static_cast<size_t>(iFrame->width*iFrame->height*3) * sizeof(uint8_t));
+					// std::memmove(frameData, fcopy.predictionsFrameBGR.data, static_cast<size_t>(iFrame->width*iFrame->height*3) * sizeof(uint8_t));
+					std::memmove(frameData, fcopy.predictionsFrameBGR.data, static_cast<size_t>(pluginFrame->width*pluginFrame->height*3) * sizeof(uint8_t));
 				}
 			}
 			// Copy Frame meta data
-			if (bgrFrame && incFrame)
+			if (bgrFrame && pluginFrame)
 			{
-				av_frame_copy_props(bgrFrame.get(), incFrame);
-				scaler.moveFrom(incFrame, bgrFrame.get());
+				av_frame_copy_props(bgrFrame.get(), pluginFrame);
+				scaler.moveFrom(pluginFrame, bgrFrame.get());
 			}
 
-			auto process_end = std::chrono::system_clock::now();
-			std::chrono::duration<double> processing_duration = process_end-process_start;
+			// auto process_end = std::chrono::system_clock::now();
+			// std::chrono::duration<double> processing_duration = process_end-process_start;
 
 			// std::ostringstream oss;
-			oss << "Processing time: " << std::chrono::duration_cast<std::chrono::milliseconds>(processing_duration).count() << " ms\n";
-			Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
+			// oss << "Processing time: " << std::chrono::duration_cast<std::chrono::milliseconds>(processing_duration).count() << " ms\n";
+			// Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 
 			// Remove the pointer
 			incFrame = nullptr;
-			// Plog::log(Plog::LogPriority::INFO, TAG, "step end update");
 		}
 	}
 
@@ -215,5 +208,10 @@ namespace jami
 	{
 		running = false;
 		inputCv.notify_all();
+	}
+
+	void VideoSubscriber::setBackground(const std::string& dataPath, const std::string& value)
+	{
+		pluginProcessor.setBackgroundImage(dataPath, value);
 	}
 }

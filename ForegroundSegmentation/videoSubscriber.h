@@ -39,9 +39,9 @@ extern "C" {
 
 #include "pluginProcessor.h"
 
-namespace jami 
+namespace jami
 {
-    class FrameCopy 
+    class FrameCopy
 	{
 		public:
 		// This frame is a resized version of the original in RGB format
@@ -54,7 +54,7 @@ namespace jami
 		cv::Mat predictionsResizedFrameBGR;
 	};
 
-    class VideoSubscriber : public jami::Observer<AVFrame *> 
+    class VideoSubscriber : public jami::Observer<AVFrame *>
     {
         public:
             VideoSubscriber(const std::string &dataPath);
@@ -66,6 +66,7 @@ namespace jami
 
             void detach();
             void stop();
+            void setBackground(const std::string& dataPath, const std::string& value);
 
 
         private:
@@ -75,11 +76,11 @@ namespace jami
 
             //Data
             std::string path_;
-            
+
             // Frame
             FrameCopy fcopy;
             cv::Mat frame;
-            
+
             FrameScaler scaler;
 
             // Threading
@@ -96,4 +97,3 @@ namespace jami
             PluginProcessor pluginProcessor;
     };
 }
-
