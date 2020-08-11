@@ -1,0 +1,5 @@
+{
+	"name": "GreenScreen",
+	"description" : "GreenScreen Plugin with Tensorflow 2.1.1",
+	"version" : "1.0"
+}

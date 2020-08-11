@@ -1,5 +1,0 @@
-{
-	"name": "foregroundsegmentation",
-	"description" : "Foreground segmentation plugin with tensorflow",
-	"version" : "1.0.0"
-}

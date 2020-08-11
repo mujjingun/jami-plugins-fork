@@ -1,5 +1,5 @@
-/*
- *  Copyright (C) 2004-2020 Savoir-faire Linux Inc.
+/**
+ *  Copyright (C) 2020 Savoir-faire Linux Inc.
  *
  *  Author: Aline Gondim Santos <aline.gondimsantos@savoirfairelinux.com>
  *
@@ -32,7 +32,7 @@ extern "C" {
 
 using FrameUniquePtr = std::unique_ptr<AVFrame, void(*)(AVFrame*)>;
 
-class FrameScaler{
+class FrameScaler {
 public:
     FrameScaler() : ctx_(nullptr), mode_(SWS_FAST_BILINEAR) {}
 
@@ -46,8 +46,10 @@ public:
      * @param desiredFormat
      * @return
      */
-    FrameUniquePtr scaleConvert(const AVFrame* input, const size_t desiredWidth, const size_t desiredHeight,
-                                const AVPixelFormat desiredFormat){
+    FrameUniquePtr
+    scaleConvert (const AVFrame* input, const size_t desiredWidth, const size_t desiredHeight,
+                                const AVPixelFormat desiredFormat)
+    {
         FrameUniquePtr output{av_frame_alloc(), [](AVFrame* frame){ if(frame) {av_frame_free(&frame);} }};
         if(input) {
             output->width = static_cast<int>(desiredWidth);
@@ -86,7 +88,8 @@ public:
      * @param pix
      * @return
      */
-    FrameUniquePtr convertFormat(const AVFrame* input, AVPixelFormat pix) {
+    FrameUniquePtr
+    convertFormat (const AVFrame* input, AVPixelFormat pix) {
         return input?scaleConvert(input,static_cast<size_t>(input->width),static_cast<size_t>(input->height), pix):
                      std::unique_ptr<AVFrame, void(*)(AVFrame*)>{nullptr, [](AVFrame* frame){(void)frame;}};
     }
@@ -96,7 +99,8 @@ public:
      * @param dst
      * @param src
      */
-    void moveFrom(AVFrame* dst,  AVFrame* src) {
+    void
+    moveFrom (AVFrame* dst,  AVFrame* src) {
         if(dst && src) {
             av_frame_unref(dst);
             av_frame_move_ref(dst, src);

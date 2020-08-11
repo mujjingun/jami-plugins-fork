@@ -1,5 +1,5 @@
-/*
- *  Copyright (C) 2004-2020 Savoir-faire Linux Inc.
+/**
+ *  Copyright (C) 2020 Savoir-faire Linux Inc.
  *
  *  Author: Aline Gondim Santos <aline.gondimsantos@savoirfairelinux.com>
  *
@@ -17,7 +17,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
  */
-
 
 #ifndef PLUGLOG_H
 #define PLUGLOG_H
@@ -41,13 +40,13 @@ inline char separator()
 #endif
 }
 
-class Plog{
+class Plog {
 private:
     Plog() = delete;
     Plog(const Plog&) = delete;
     Plog(Plog&&) = default;
 public:
-    enum class LogPriority{
+    enum class LogPriority {
         /** For internal use only.  */
         UNKNOWN,
         /** The default priority, for internal use only.  */
@@ -61,15 +60,16 @@ public:
         /** Warning logging. For use with recoverable failures. */
         WARN,
         /** Error logging. For use with unrecoverable failures. */
-        ERROR,
+        ERR,
         /** Fatal logging. For use when aborting. */
         FATAL,
         /** For internal use only.  */
         SILENT, /* only for SetMinPriority(); must be last */
     };
 
-    static void log(const LogPriority priority, const std::string& tag, const std::string& s) {
-
+    static void
+    log(const LogPriority priority, const std::string& tag, const std::string& s)
+    {
 // Android only
 #ifdef __ANDROID__
         switch (priority) {
@@ -82,7 +82,7 @@ public:
         case LogPriority::WARN:
             __android_log_print(ANDROID_LOG_WARN, tag.c_str(), ": %s", s.c_str());
             break;
-        case LogPriority::ERROR:
+        case LogPriority::ERR:
             __android_log_print(ANDROID_LOG_ERROR, tag.c_str(), ": %s", s.c_str());
         default:
             break;
@@ -96,10 +96,12 @@ public:
             case LogPriority::VERBOSE:
             case LogPriority::DEBUG:
             case LogPriority::INFO:
+                std::cout<< tag <<": " << s <<std::endl;
+                break;
             case LogPriority::WARN:
                 std::cout<< tag <<": " << s <<std::endl;
                 break;
-            case LogPriority::ERROR:
+            case LogPriority::ERR:
             case LogPriority::FATAL:
                 std::cerr<< tag <<": " << s <<std::endl;
                 break;
