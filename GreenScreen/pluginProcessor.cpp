@@ -43,7 +43,7 @@ namespace jami
 {
 
 PluginProcessor::PluginProcessor(const std::string& dataPath):
-pluginInference{TFModel{dataPath + sep + "models/" + mPluginParameters->model}}
+pluginInference{TFModel{dataPath + sep + "models" + sep + mPluginParameters->model}}
 {
 	initModel();
 	setBackgroundImage(dataPath, mPluginParameters->image);
@@ -52,7 +52,7 @@ pluginInference{TFModel{dataPath + sep + "models/" + mPluginParameters->model}}
 void
 PluginProcessor::setBackgroundImage(const std::string& dataPath, const std::string& value)
 {
-	backgroundPath = dataPath + sep + "backgrounds" + sep + value;
+	backgroundPath = dataPath + sep + "backgrounds" + sep + value; //
 	cv::Size size = cv::Size{0,0};
 
 	if (!backgroundImage.empty())

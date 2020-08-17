@@ -41,13 +41,11 @@ public:
 
 	virtual void detach() override;
 	virtual void setPreferenceAttribute(const std::string& key, const std::string& value) override;
-	
-	std::shared_ptr<VideoSubscriber> mVS;
-	
-	std::string dataPath() const { return datapath_; }
+	virtual bool preferenceMapHasKey(const std::string& key) override;
 
-private:
-	bool preferenceMapHasKey(const std::string& key);
+	std::shared_ptr<VideoSubscriber> mVS;
+
+	std::string dataPath() const { return datapath_; }
 
 private:
 	const std::string datapath_;

@@ -88,10 +88,10 @@ PluginMediaHandler::setPreferenceAttribute(const std::string& key, const std::st
 bool
 PluginMediaHandler::preferenceMapHasKey(const std::string& key)
 {
-	if (ppm_.find(key) == ppm_.end()) {
-		return false;
+	if (key == "backgroundlist") {
+		return true;
 	}
-	return true;
+	return false;
 }
 
 void

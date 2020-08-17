@@ -8,10 +8,10 @@
         "defaultValue": "out",
         "entries": ["sent", "received"],
         "entryValues": ["out", "in"],
-        "editable": "true"
+        "scope": "plugin"
     },
     {
-        "category" : "ModelPreference",
+        "category" : "models",
         "type": "List",
         "key": "modellist",
         "title": "Model to load",
@@ -19,17 +19,17 @@
         "defaultValue": "mModel.pb",
         "entries": ["mModel"],
         "entryValues": ["mModel.pb"],
-        "editable": "false"
+        "scope": "plugin"
     },
     {
-        "category" : "ImageBackground",
-        "type": "List",
+        "category" : "backgrounds",
+        "type": "UserList",
         "key": "backgroundlist",
         "title": "Background image",
         "summary": "Select the image background to use",
         "defaultValue": "background2.png",
-        "entries": ["Painture", "Beach"],
-        "entryValues": ["background1.png", "background2.png"],
-        "editable": "true"
+        "entries": [ "Add new image", "Painture", "Beach" ],
+        "entryValues": ["", "background1.png", "background2.png"],
+        "scope": "plugin,Foreground Segmentation"
     }
 ]

@@ -17,9 +17,12 @@ set (JPL_DIRECTORY ${PROJECT_BINARY_DIR}/jpl)
 
 if(WIN32)
 	message(OS:\  WINDOWS\ ${CMAKE_SYSTEM_PROCESSOR})
-	set (CONTRIB_PLATFORM_CURT ${CMAKE_SYSTEM_PROCESSOR})
+	if (NOT ${CMAKE_CL_64})
+		message( FATAL_ERROR "\nUse CMake only for x64 Windows" )
+	endif()
+	set (CONTRIB_PLATFORM_CURT x64)
 	set (CONTRIB_PLATFORM ${CONTRIB_PLATFORM_CURT}-windows)
-	set (LIBRARY_FILE_NAME lib${PLUGIN_NAME}.dll)
+	set (LIBRARY_FILE_NAME ${PLUGIN_NAME}.dll)
 	set (LIBS_DIR $ENV{HOME}/Documents/GITHUB/Libs)
 	set (OPENCV $ENV{HOME}/Documents/GITHUB/opencv/build-bash/)
 	set (FFMPEG ${CONTRIB_PATH}/build/ffmpeg/Build/win32/x64)
@@ -77,8 +80,7 @@ set(plugin_SRC main.cpp
 			   videoSubscriber.cpp
 			   )
 
-set(plugin_HDR ${ProjectName}Config.h
-			   pluginInference.h
+set(plugin_HDR pluginInference.h
 			   pluginMediaHandler.h
 			   pluginParameters.h
 			   pluginProcessor.h
@@ -111,7 +113,21 @@ target_include_directories(${ProjectName} PUBLIC ${PROJECT_BINARY_DIR}
 												 ${LIBS_DIR}/${TENSORFLOW}/include/third_party/eigen3
 												 ${LIBS_DIR}/${TENSORFLOW}/include/flatbuffers
 												 )
+if (WIN32)
+target_link_directories(${ProjectName} PUBLIC	${CONTRIB_PATH}
+										${LIBS_DIR}/${TENSORFLOW}/lib/${CONTRIB_PLATFORM}
+										${OPENCV}/install/x64/vc16/staticlib
+										${FFMPEG}/bin
+										${LIBS_DIR}
+										${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib
+										${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/opencv4/3rdparty
+										${LIBS_DIR}/${TENSORFLOW}/lib/${CONTRIB_PLATFORM}
+										)
 
+target_link_libraries(${ProjectName} PUBLIC swscale avutil libpng opencv_imgcodecs411 opencv_imgproc411 opencv_core411 ${TFLIB} zlib)
+endif()
+
+if (UNIX)
 link_directories(${ProjectName} PUBLIC	${CONTRIB_PATH}
 										${LIBS_DIR}/${TENSORFLOW}/lib/${CONTRIB_PLATFORM}
 										${OPENCV}/install/x64/vc16/staticlib
@@ -121,11 +137,6 @@ link_directories(${ProjectName} PUBLIC	${CONTRIB_PATH}
 										${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/opencv4/3rdparty
 										${LIBS_DIR}/${TENSORFLOW}/lib/${CONTRIB_PLATFORM}
 										)
-if (WIN32)
-target_link_libraries(${ProjectName} PUBLIC swscale avutil libpng opencv_imgcodecs411 opencv_imgproc411 opencv_core411 ${TFLIB} zlib)
-endif()
-
-if (UNIX)
 target_link_libraries(${ProjectName} PUBLIC swscale avutil libpng opencv_imgcodecs opencv_imgproc opencv_core ${TFLIB})
 endif()
 
@@ -145,13 +156,22 @@ add_custom_command(
 	COMMENT "Assembling Plugin files"
 )
 
-add_custom_command(
-	TARGET ${ProjectName}
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/Release/${LIBRARY_FILE_NAME} ${JPL_DIRECTORY}/lib/
-	if (WIN32)
-		COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/Release/${ProjectName}.lib ${JPL_DIRECTORY}/lib/
-	endif()
-	COMMAND python ${PROJECT_SOURCE_DIR}/../assemblePlugin.py --plugins=GreenScreen
-	COMMENT "Generating JPL archive"
-)
+if (WIN32)
+	add_custom_command(
+		TARGET ${ProjectName}
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/Release/${ProjectName}.lib ${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}
+		COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/Release/${LIBRARY_FILE_NAME} ${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}
+		COMMAND python ${PROJECT_SOURCE_DIR}/../assemblePlugin.py --plugins=GreenScreen
+		COMMENT "Generating JPL archive"
+	)
+else()
+	add_custom_command(
+		TARGET ${ProjectName}
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/Release/${LIBRARY_FILE_NAME} ${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}
+		COMMAND python ${PROJECT_SOURCE_DIR}/../assemblePlugin.py --plugins=GreenScreen
+		COMMENT "Generating JPL archive"
+	)
+
+endif()
