@@ -148,6 +148,6 @@ protected:
      */
     size_t nbLabels;
 
-    bool allocated = false;
+    bool allocated_ = false;
 };
 }

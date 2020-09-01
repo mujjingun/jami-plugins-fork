@@ -64,7 +64,7 @@ public:
 
     void detach();
     void stop();
-    void setBackground(const std::string& dataPath, const std::string& value);
+    void setBackground(const std::string& backgroundPath);
 
 
 private:

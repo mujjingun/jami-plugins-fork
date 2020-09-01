@@ -75,7 +75,7 @@ VideoSubscriber::~VideoSubscriber()
 void
 VideoSubscriber::update(jami::Observable<AVFrame*> *, AVFrame* const &iFrame)
 {
-	if (pluginProcessor.pluginInference.isAllocated()) {
+	if (pluginProcessor.pluginInference.isAllocated() && pluginProcessor.hasBackground()) {
 		if (!iFrame)
 			return;
 		AVFrame * pluginFrame = const_cast<AVFrame *>(iFrame);
@@ -196,8 +196,8 @@ VideoSubscriber::stop()
 }
 
 void
-VideoSubscriber::setBackground(const std::string& dataPath, const std::string& value)
+VideoSubscriber::setBackground(const std::string& backgroundPath)
 {
-	pluginProcessor.setBackgroundImage(dataPath, value);
+	pluginProcessor.setBackgroundImage(backgroundPath);
 }
 }

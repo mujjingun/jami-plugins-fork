@@ -78,8 +78,8 @@ PluginMediaHandler::setPreferenceAttribute(const std::string& key, const std::st
 	if (it != ppm_.end()) {
 		if (ppm_[key] != value) {
 			ppm_[key] = value;
-			if (key == "backgroundlist") {
-				mVS->setBackground(dataPath(), value);
+			if (key == "background") {
+				mVS->setBackground(value);
 			}
 		}
 	}
@@ -88,7 +88,7 @@ PluginMediaHandler::setPreferenceAttribute(const std::string& key, const std::st
 bool
 PluginMediaHandler::preferenceMapHasKey(const std::string& key)
 {
-	if (key == "backgroundlist") {
+	if (key == "background") {
 		return true;
 	}
 	return false;

@@ -46,31 +46,32 @@ PluginProcessor::PluginProcessor(const std::string& dataPath):
 pluginInference{TFModel{dataPath + sep + "models" + sep + mPluginParameters->model}}
 {
 	initModel();
-	setBackgroundImage(dataPath, mPluginParameters->image);
+	setBackgroundImage(mPluginParameters->image);
 }
 
 void
-PluginProcessor::setBackgroundImage(const std::string& dataPath, const std::string& value)
+PluginProcessor::setBackgroundImage(const std::string& backgroundPath)
 {
-	backgroundPath = dataPath + sep + "backgrounds" + sep + value; //
 	cv::Size size = cv::Size{0,0};
 
 	if (!backgroundImage.empty())
 		size = backgroundImage.size();
 
-	backgroundImage = cv::imread(backgroundPath);
-	if (backgroundImage.cols == 0) {
+	cv::Mat newBackgroundImage = cv::imread(backgroundPath);
+	if (newBackgroundImage.cols == 0) {
 		Plog::log(Plog::LogPriority::ERR, TAG, "Background image not Loaded");
 	}
 	else {
 		Plog::log(Plog::LogPriority::INFO, TAG, "Background image Loaded");
-	}
-
-	cv::cvtColor(backgroundImage, backgroundImage, cv::COLOR_BGR2RGB);
-	backgroundImage.convertTo(backgroundImage, CV_32FC3);
-	if (size.height) {
-		cv::resize(backgroundImage, backgroundImage, size);
-		backgroundRotation = 0;
+		cv::cvtColor(newBackgroundImage, newBackgroundImage, cv::COLOR_BGR2RGB);
+		newBackgroundImage.convertTo(newBackgroundImage, CV_32FC3);
+		if (size.height) {
+			cv::resize(newBackgroundImage, newBackgroundImage, size);
+			backgroundRotation = 0;
+		}
+		backgroundImage = newBackgroundImage.clone();
+		newBackgroundImage.release();
+		hasBackground_ = true;
 	}
 }
 
@@ -299,5 +300,11 @@ PluginProcessor::rotateFrame(int angle, cv::Mat& mat)
 				break;
 		}
 	}
+}
+
+bool
+PluginProcessor::hasBackground() const
+{
+    return hasBackground_;
 }
 } // namespace jami

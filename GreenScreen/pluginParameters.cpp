@@ -35,8 +35,8 @@ setGlobalPluginParameters(std::map<std::string, std::string> pp)
             pluginParameters.model = pp.at("modellist");
             Plog::log(Plog::LogPriority::INFO, "GLOBAL MODEL ", pluginParameters.model);
         }
-        if(pp.find("backgroundlist") != pp.end()) {
-            pluginParameters.image = pp.at("backgroundlist");
+        if(pp.find("background") != pp.end()) {
+            pluginParameters.image = pp.at("background");
             Plog::log(Plog::LogPriority::INFO, "GLOBAL IMAGE ", pluginParameters.image);
         }
     }

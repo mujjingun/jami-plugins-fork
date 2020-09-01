@@ -64,8 +64,9 @@ public:
 	void drawMaskOnFrame(cv::Mat& frame, cv::Mat& frameReduced, std::vector<float>computedMask, int lineSize, int angle);
 	int getBackgroundRotation();
 	void setBackgroundRotation(int angle);
-	void setBackgroundImage(const std::string& dataPath, const std::string& value);
+	void setBackgroundImage(const std::string& backgroundPath);
 	void rotateFrame(int angle, cv::Mat& mat);
+    bool hasBackground() const;
 
 	// Output predictions
 	std::vector<float> computedMask;
@@ -84,5 +85,6 @@ private:
 	// Frame
 	cv::Mat frame;
 	int backgroundRotation = 0;
+    bool hasBackground_ = false;
 };
 } // namespace jami

@@ -56,7 +56,7 @@ TensorflowInference::~TensorflowInference() {}
 bool
 TensorflowInference::isAllocated() const
 {
-    return allocated;
+    return allocated_;
 }
 
 #ifdef TFLITE
@@ -108,7 +108,7 @@ TensorflowInference::allocateTensors()
         std::runtime_error("Failed to allocate tensors!");
     } else {
         Plog::log(Plog::LogPriority::INFO, "TENSOR", "TENSORS ALLOCATED" );
-        allocated = true;
+        allocated_ = true;
     }
 }
 
@@ -226,7 +226,7 @@ TensorflowInference::LoadGraph()
     tensorflow::GraphDef graph_def;
     tensorflow::Status load_graph_status = tensorflow::ReadBinaryProto(tensorflow::Env::Default(), tfModel.modelPath, &graph_def);
     if (!load_graph_status.ok()) {
-        allocated = false;
+        allocated_ = false;
         Plog::log(Plog::LogPriority::INFO, "LOAD GRAPH", "A problem occured when loading the graph");
         return ;
     }
@@ -259,12 +259,12 @@ TensorflowInference::LoadGraph()
     tensorflow::Status session_create_status = session->Create(graph_def);
     if (!session_create_status.ok()) {
         Plog::log(Plog::LogPriority::INFO, "INIT SESSION", "A problem occured when initializating session");
-        allocated = true;
+        allocated_ = true;
         return ;
     }
     Plog::log(Plog::LogPriority::INFO, "INIT SESSION", "session initialized");
 
-    allocated = true;
+    allocated_ = true;
 }
 
 void

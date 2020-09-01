@@ -23,13 +23,12 @@
     },
     {
         "category" : "backgrounds",
-        "type": "UserList",
-        "key": "backgroundlist",
+        "type": "Path",
+        "mimeType": "image/png",
+        "key": "background",
         "title": "Background image",
         "summary": "Select the image background to use",
-        "defaultValue": "background2.png",
-        "entries": [ "Add new image", "Painture", "Beach" ],
-        "entryValues": ["", "background1.png", "background2.png"],
+        "defaultValue": "data/backgrounds/background2.png",
         "scope": "plugin,Foreground Segmentation"
     }
 ]
