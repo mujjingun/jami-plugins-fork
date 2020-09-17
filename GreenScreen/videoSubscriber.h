@@ -26,7 +26,7 @@ extern "C" {
 }
 #include <observer.h>
 
-//STl
+// STl
 #include <map>
 #include <thread>
 #include <condition_variable>
@@ -40,8 +40,9 @@ extern "C" {
 #include "pluginProcessor.h"
 
 namespace jami {
-    
-class FrameCopy {
+
+class FrameCopy
+{
 public:
     // This frame is a resized version of the original in RGB format
     cv::Mat resizedFrameRGB;
@@ -53,25 +54,25 @@ public:
     cv::Mat predictionsResizedFrameRGB;
 };
 
-class VideoSubscriber : public jami::Observer<AVFrame*> {
+class VideoSubscriber : public jami::Observer<AVFrame*>
+{
 public:
     VideoSubscriber(const std::string& dataPath);
     ~VideoSubscriber();
 
-    virtual void update(jami::Observable<AVFrame*> *, AVFrame* const &) override;
-    virtual void attached(jami::Observable<AVFrame*> *) override;
-    virtual void detached(jami::Observable<AVFrame*> *) override;
+    virtual void update(jami::Observable<AVFrame*>*, AVFrame* const&) override;
+    virtual void attached(jami::Observable<AVFrame*>*) override;
+    virtual void detached(jami::Observable<AVFrame*>*) override;
 
     void detach();
     void stop();
     void setBackground(const std::string& backgroundPath);
 
-
 private:
     // Observer pattern
-    Observable<AVFrame*> *observable_ = nullptr;
+    Observable<AVFrame*>* observable_ = nullptr;
 
-    //Data
+    // Data
     std::string path_;
 
     // Frame
@@ -86,11 +87,11 @@ private:
     std::condition_variable inputCv;
 
     // Status variables of the processing
-    bool firstRun{true};
-    bool running{true};
-    bool newFrame{false};
+    bool firstRun {true};
+    bool running {true};
+    bool newFrame {false};
 
-    //std::shared_ptr<PluginProcessor> pluginProcessor;
+    // std::shared_ptr<PluginProcessor> pluginProcessor;
     PluginProcessor pluginProcessor;
 };
-}
+} // namespace jami

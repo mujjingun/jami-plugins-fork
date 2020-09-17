@@ -26,15 +26,19 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-//STL
+// STL
 #include <memory>
 #include <functional>
 
-using FrameUniquePtr = std::unique_ptr<AVFrame, void(*)(AVFrame*)>;
+using FrameUniquePtr = std::unique_ptr<AVFrame, void (*)(AVFrame*)>;
 
-class FrameScaler {
+class FrameScaler
+{
 public:
-    FrameScaler() : ctx_(nullptr), mode_(SWS_FAST_BILINEAR) {}
+    FrameScaler()
+        : ctx_(nullptr)
+        , mode_(SWS_FAST_BILINEAR)
+    {}
 
     /**
      * @brief scaleConvert
@@ -46,12 +50,17 @@ public:
      * @param desiredFormat
      * @return
      */
-    FrameUniquePtr
-    scaleConvert (const AVFrame* input, const size_t desiredWidth, const size_t desiredHeight,
+    FrameUniquePtr scaleConvert(const AVFrame* input,
+                                const size_t desiredWidth,
+                                const size_t desiredHeight,
                                 const AVPixelFormat desiredFormat)
     {
-        FrameUniquePtr output{av_frame_alloc(), [](AVFrame* frame){ if(frame) {av_frame_free(&frame);} }};
-        if(input) {
+        FrameUniquePtr output {av_frame_alloc(), [](AVFrame* frame) {
+                                   if (frame) {
+                                       av_frame_free(&frame);
+                                   }
+                               }};
+        if (input) {
             output->width = static_cast<int>(desiredWidth);
             output->height = static_cast<int>(desiredHeight);
             output->format = static_cast<int>(desiredFormat);
@@ -69,13 +78,19 @@ public:
                                         output_frame->height,
                                         static_cast<AVPixelFormat>(output_frame->format),
                                         mode_,
-                                        nullptr, nullptr, nullptr);
+                                        nullptr,
+                                        nullptr,
+                                        nullptr);
             if (!ctx_) {
                 throw std::bad_alloc();
             }
 
-            sws_scale(ctx_, input->data, input->linesize, 0,
-                      input->height, output_frame->data,
+            sws_scale(ctx_,
+                      input->data,
+                      input->linesize,
+                      0,
+                      input->height,
+                      output_frame->data,
                       output_frame->linesize);
         }
 
@@ -88,10 +103,15 @@ public:
      * @param pix
      * @return
      */
-    FrameUniquePtr
-    convertFormat (const AVFrame* input, AVPixelFormat pix) {
-        return input?scaleConvert(input,static_cast<size_t>(input->width),static_cast<size_t>(input->height), pix):
-                     std::unique_ptr<AVFrame, void(*)(AVFrame*)>{nullptr, [](AVFrame* frame){(void)frame;}};
+    FrameUniquePtr convertFormat(const AVFrame* input, AVPixelFormat pix)
+    {
+        return input ? scaleConvert(input,
+                                    static_cast<size_t>(input->width),
+                                    static_cast<size_t>(input->height),
+                                    pix)
+                     : std::unique_ptr<AVFrame, void (*)(AVFrame*)> {nullptr, [](AVFrame* frame) {
+                                                                         (void) frame;
+                                                                     }};
     }
 
     /**
@@ -99,15 +119,15 @@ public:
      * @param dst
      * @param src
      */
-    void
-    moveFrom (AVFrame* dst,  AVFrame* src) {
-        if(dst && src) {
+    void moveFrom(AVFrame* dst, AVFrame* src)
+    {
+        if (dst && src) {
             av_frame_unref(dst);
             av_frame_move_ref(dst, src);
         }
     }
 
 protected:
-    SwsContext *ctx_;
+    SwsContext* ctx_;
     int mode_;
 };

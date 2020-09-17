@@ -15,7 +15,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA.
  */
 
 #pragma once
@@ -26,59 +27,58 @@
 #include <opencv2/core.hpp>
 // STL
 #include <array>
-#include <vector>
-#include <tuple>
 #include <iostream>
+#include <tuple>
+#include <vector>
 
 namespace jami {
 
-class PluginInference : public TensorflowInference {
+class PluginInference : public TensorflowInference
+{
 public:
-	/**
-	 * @brief PluginInference
-	 * Is a type of supervised learning where we detect objects in images
-	 * Draw a bounding boxes around them
-	 * @param model
-	 */
-	PluginInference(TFModel model);
-	~PluginInference();
+    /**
+     * @brief PluginInference
+     * Is a type of supervised learning where we detect objects in images
+     * Draw a bounding boxes around them
+     * @param model
+     */
+    PluginInference(TFModel model);
+    ~PluginInference();
 
 #ifdef TFLITE
-	/**
-	 * @brief getInput
-	 * Returns the input where to fill the data
-	 * Use this method if you know what you are doing, all the necessary checks
-	 * on dimensions must be done on your part
-	 * @return std::tuple<uint8_t *, std::vector<int>>
-	 * The first element in the tuple is the pointer to the storage location
-	 * The second element is a dimensions vector that will helps you make
-	 * The necessary checks to make your data size match the input one
-	 */
-	std::pair<uint8_t*, std::vector<int>> getInput();
+    /**
+     * @brief getInput
+     * Returns the input where to fill the data
+     * Use this method if you know what you are doing, all the necessary checks
+     * on dimensions must be done on your part
+     * @return std::tuple<uint8_t *, std::vector<int>>
+     * The first element in the tuple is the pointer to the storage location
+     * The second element is a dimensions vector that will helps you make
+     * The necessary checks to make your data size match the input one
+     */
+    std::pair<uint8_t*, std::vector<int>> getInput();
 
 #else
-	void ReadTensorFromMat(const cv::Mat& image);
+    void ReadTensorFromMat(const cv::Mat& image);
 
-#endif //TFLITE
+#endif // TFLITE
 
-	std::vector<float> masksPredictions() const;
+    std::vector<float> masksPredictions() const;
 
+    /**
+     * @brief setExpectedImageDimensions
+     * Sets imageWidth and imageHeight from the sources
+     */
+    void setExpectedImageDimensions();
 
-	/**
-	 * @brief setExpectedImageDimensions
-	 * Sets imageWidth and imageHeight from the sources
-	 */
-	void setExpectedImageDimensions();
-
-	// Getters
-	int getImageWidth() const;
-	int getImageHeight() const;
-	int getImageNbChannels() const;
-
+    // Getters
+    int getImageWidth() const;
+    int getImageHeight() const;
+    int getImageNbChannels() const;
 
 private:
-	int imageWidth = 0;
-	int imageHeight = 0;
-	int imageNbChannels = 0;
+    int imageWidth = 0;
+    int imageHeight = 0;
+    int imageNbChannels = 0;
 };
 } // namespace jami

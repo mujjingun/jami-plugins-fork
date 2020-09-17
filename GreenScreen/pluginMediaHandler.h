@@ -15,12 +15,13 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA.
  */
 
 #pragma once
 
-//Project
+// Project
 #include "videoSubscriber.h"
 
 // Plugin
@@ -31,24 +32,25 @@ using avSubjectPtr = std::weak_ptr<jami::Observable<AVFrame*>>;
 
 namespace jami {
 
-class PluginMediaHandler : public jami::CallMediaHandler {
+class PluginMediaHandler : public jami::CallMediaHandler
+{
 public:
-	PluginMediaHandler(std::map<std::string, std::string>&& ppm, std::string&& dataPath);
-	~PluginMediaHandler() override;
+    PluginMediaHandler(std::map<std::string, std::string>&& ppm, std::string&& dataPath);
+    ~PluginMediaHandler() override;
 
-	virtual void notifyAVFrameSubject(const StreamData& data, avSubjectPtr subject) override;
-	virtual std::map<std::string, std::string> getCallMediaHandlerDetails() override;
+    virtual void notifyAVFrameSubject(const StreamData& data, avSubjectPtr subject) override;
+    virtual std::map<std::string, std::string> getCallMediaHandlerDetails() override;
 
-	virtual void detach() override;
-	virtual void setPreferenceAttribute(const std::string& key, const std::string& value) override;
-	virtual bool preferenceMapHasKey(const std::string& key) override;
+    virtual void detach() override;
+    virtual void setPreferenceAttribute(const std::string& key, const std::string& value) override;
+    virtual bool preferenceMapHasKey(const std::string& key) override;
 
-	std::shared_ptr<VideoSubscriber> mVS;
+    std::shared_ptr<VideoSubscriber> mVS;
 
-	std::string dataPath() const { return datapath_; }
+    std::string dataPath() const { return datapath_; }
 
 private:
-	const std::string datapath_;
-	std::map<std::string, std::string> ppm_;
+    const std::string datapath_;
+    std::map<std::string, std::string> ppm_;
 };
-}
+} // namespace jami

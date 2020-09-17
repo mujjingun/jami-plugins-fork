@@ -15,7 +15,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA.
  */
 
 #include "pluginMediaHandler.h"
@@ -28,83 +29,86 @@ const std::string TAG = "FORESEG";
 
 namespace jami {
 
-PluginMediaHandler::PluginMediaHandler(std::map<std::string, std::string>&& ppm, std::string&& datapath):
-	datapath_{datapath}, ppm_{ppm}
+PluginMediaHandler::PluginMediaHandler(std::map<std::string, std::string>&& ppm,
+                                       std::string&& datapath)
+    : datapath_ {datapath}
+    , ppm_ {ppm}
 {
-	setGlobalPluginParameters(ppm_);
-	setId(datapath_);
-	mVS = std::make_shared<VideoSubscriber>(datapath_);
+    setGlobalPluginParameters(ppm_);
+    setId(datapath_);
+    mVS = std::make_shared<VideoSubscriber>(datapath_);
 }
 
 void
 PluginMediaHandler::notifyAVFrameSubject(const StreamData& data, jami::avSubjectPtr subject)
 {
-	Plog::log(Plog::LogPriority::INFO, TAG, "IN AVFRAMESUBJECT");
-	std::ostringstream oss;
-	std::string direction = data.direction ? "Receive" : "Preview";
-	oss << "NEW SUBJECT: [" << data.id << "," << direction << "]" << std::endl;
+    Plog::log(Plog::LogPriority::INFO, TAG, "IN AVFRAMESUBJECT");
+    std::ostringstream oss;
+    std::string direction = data.direction ? "Receive" : "Preview";
+    oss << "NEW SUBJECT: [" << data.id << "," << direction << "]" << std::endl;
 
-	bool preferredStreamDirection = false;
-	if (!ppm_.empty() && ppm_.find("streamslist") != ppm_.end()) {
-		Plog::log(Plog::LogPriority::INFO, TAG, "SET PARAMETERS");
-		preferredStreamDirection = ppm_.at("streamslist")=="in"?true:false;
-	}
-	oss << "preferredStreamDirection " << preferredStreamDirection << std::endl;
-	if (data.type == StreamType::video && !data.direction && data.direction == preferredStreamDirection) {
-		subject->attach(mVS.get()); // my image
-		oss << "got my sent image attached" << std::endl;
-	}
-	else if (data.type == StreamType::video && data.direction && data.direction == preferredStreamDirection)
-		subject->attach(mVS.get()); // the image I receive from the others on the call
+    bool preferredStreamDirection = false;
+    if (!ppm_.empty() && ppm_.find("streamslist") != ppm_.end()) {
+        Plog::log(Plog::LogPriority::INFO, TAG, "SET PARAMETERS");
+        preferredStreamDirection = ppm_.at("streamslist") == "in" ? true : false;
+    }
+    oss << "preferredStreamDirection " << preferredStreamDirection << std::endl;
+    if (data.type == StreamType::video && !data.direction
+        && data.direction == preferredStreamDirection) {
+        subject->attach(mVS.get()); // my image
+        oss << "got my sent image attached" << std::endl;
+    } else if (data.type == StreamType::video && data.direction
+               && data.direction == preferredStreamDirection)
+        subject->attach(mVS.get()); // the image I receive from the others on the call
 
-	Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
+    Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 }
 
 std::map<std::string, std::string>
 PluginMediaHandler::getCallMediaHandlerDetails()
 {
-	std::map<std::string, std::string> mediaHandlerDetails = {};
-	mediaHandlerDetails["name"] = NAME;
-	mediaHandlerDetails["iconPath"] = datapath_ + sep + "icon.png";
-	mediaHandlerDetails["pluginId"] = id();
+    std::map<std::string, std::string> mediaHandlerDetails = {};
+    mediaHandlerDetails["name"] = NAME;
+    mediaHandlerDetails["iconPath"] = datapath_ + sep + "icon.png";
+    mediaHandlerDetails["pluginId"] = id();
 
-	return mediaHandlerDetails;
+    return mediaHandlerDetails;
 }
 
 void
 PluginMediaHandler::setPreferenceAttribute(const std::string& key, const std::string& value)
 {
-	auto it = ppm_.find(key);
-	if (it != ppm_.end()) {
-		if (ppm_[key] != value) {
-			ppm_[key] = value;
-			if (key == "background") {
-				mVS->setBackground(value);
-			}
-		}
-	}
+    auto it = ppm_.find(key);
+    if (it != ppm_.end()) {
+        if (ppm_[key] != value) {
+            ppm_[key] = value;
+            if (key == "background") {
+                mVS->setBackground(value);
+            }
+        }
+    }
 }
 
 bool
 PluginMediaHandler::preferenceMapHasKey(const std::string& key)
 {
-	if (key == "background") {
-		return true;
-	}
-	return false;
+    if (key == "background") {
+        return true;
+    }
+    return false;
 }
 
 void
 PluginMediaHandler::detach()
 {
-	mVS->detach();
+    mVS->detach();
 }
 
 PluginMediaHandler::~PluginMediaHandler()
 {
-	std::ostringstream oss;
-	oss << " ~FORESEG Plugin" << std::endl;
-	Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
-	detach();
+    std::ostringstream oss;
+    oss << " ~FORESEG Plugin" << std::endl;
+    Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
+    detach();
 }
-}
+} // namespace jami

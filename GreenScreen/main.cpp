@@ -26,7 +26,7 @@
 #include "pluginMediaHandler.h"
 
 #ifdef WIN32
-#define EXPORT_PLUGIN __declspec (dllexport)
+#define EXPORT_PLUGIN __declspec(dllexport)
 #else
 #define EXPORT_PLUGIN
 #endif
@@ -34,9 +34,10 @@
 #define GreenScreen_VERSION_MAJOR 1
 #define GreenScreen_VERSION_MINOR 0
 
-extern "C" 
-{
-void pluginExit(void) { }
+extern "C" {
+void
+pluginExit(void)
+{}
 
 EXPORT_PLUGIN JAMI_PluginExitFunc
 JAMI_dynPluginInit(const JAMI_PluginAPI* api)
@@ -44,18 +45,18 @@ JAMI_dynPluginInit(const JAMI_PluginAPI* api)
     std::cout << "**************************" << std::endl << std::endl;
     std::cout << "**  GREENSCREEN PLUGIN  **" << std::endl;
     std::cout << "**************************" << std::endl << std::endl;
-    std::cout << " Version " << GreenScreen_VERSION_MAJOR << "." << GreenScreen_VERSION_MINOR << std::endl;
+    std::cout << " Version " << GreenScreen_VERSION_MAJOR << "." << GreenScreen_VERSION_MINOR
+              << std::endl;
 
     // If invokeService doesn't return an error
-    if(api) 
-    {
+    if (api) {
         std::map<std::string, std::string> ppm;
         api->invokeService(api, "getPluginPreferences", &ppm);
         std::string dataPath;
         api->invokeService(api, "getPluginDataPath", &dataPath);
         auto fmp = std::make_unique<jami::PluginMediaHandler>(std::move(ppm), std::move(dataPath));
 
-        if(!api->manageComponent(api,"CallMediaHandlerManager", fmp.release())) {
+        if (!api->manageComponent(api, "CallMediaHandlerManager", fmp.release())) {
             return pluginExit;
         }
     }

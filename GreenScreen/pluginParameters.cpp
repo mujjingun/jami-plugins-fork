@@ -18,7 +18,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
  */
 
-#include "pluginParameters.h"// Logger
+#include "pluginParameters.h" // Logger
 #include "pluglog.h"
 
 PluginParameters pluginParameters;
@@ -27,30 +27,31 @@ void
 setGlobalPluginParameters(std::map<std::string, std::string> pp)
 {
     if (!pp.empty()) {
-        if(pp.find("streamslist") != pp.end()) {
+        if (pp.find("streamslist") != pp.end()) {
             pluginParameters.stream = pp.at("streamslist");
             Plog::log(Plog::LogPriority::INFO, "GLOBAL STREAM ", pluginParameters.stream);
         }
-        if(pp.find("modellist") != pp.end()) {
+        if (pp.find("modellist") != pp.end()) {
             pluginParameters.model = pp.at("modellist");
             Plog::log(Plog::LogPriority::INFO, "GLOBAL MODEL ", pluginParameters.model);
         }
-        if(pp.find("background") != pp.end()) {
+        if (pp.find("background") != pp.end()) {
             pluginParameters.image = pp.at("background");
             Plog::log(Plog::LogPriority::INFO, "GLOBAL IMAGE ", pluginParameters.image);
         }
     }
 }
 
-void getGlobalPluginParameters(PluginParameters* mPluginParameters)
+void
+getGlobalPluginParameters(PluginParameters* mPluginParameters)
 {
     mPluginParameters->image = pluginParameters.image;
     mPluginParameters->model = pluginParameters.model;
     mPluginParameters->stream = pluginParameters.stream;
 }
 
-
-PluginParameters* getGlobalPluginParameters()
+PluginParameters*
+getGlobalPluginParameters()
 {
     return &pluginParameters;
 }

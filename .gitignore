@@ -1,6 +1,5 @@
 /build/
-/contrib/
-/simpleplugin/
-modelEvaluation.py
-/loader/
 *msvc*
+*android-toolchain-*
+config.mak
+*Libs*

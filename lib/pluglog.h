@@ -31,7 +31,8 @@
 #include <android/log.h>
 #endif
 
-inline char separator()
+inline char
+separator()
 {
 #ifdef _WIN32
     return '\\';
@@ -40,11 +41,13 @@ inline char separator()
 #endif
 }
 
-class Plog {
+class Plog
+{
 private:
     Plog() = delete;
     Plog(const Plog&) = delete;
     Plog(Plog&&) = default;
+
 public:
     enum class LogPriority {
         /** For internal use only.  */
@@ -67,8 +70,7 @@ public:
         SILENT, /* only for SetMinPriority(); must be last */
     };
 
-    static void
-    log(const LogPriority priority, const std::string& tag, const std::string& s)
+    static void log(const LogPriority priority, const std::string& tag, const std::string& s)
     {
 // Android only
 #ifdef __ANDROID__
@@ -91,27 +93,25 @@ public:
 // Anything but Android
 #else
         switch (priority) {
-            case LogPriority::UNKNOWN:
-            case LogPriority::DEFAULT:
-            case LogPriority::VERBOSE:
-            case LogPriority::DEBUG:
-            case LogPriority::INFO:
-                std::cout<< tag <<": " << s <<std::endl;
-                break;
-            case LogPriority::WARN:
-                std::cout<< tag <<": " << s <<std::endl;
-                break;
-            case LogPriority::ERR:
-            case LogPriority::FATAL:
-                std::cerr<< tag <<": " << s <<std::endl;
-                break;
-            case LogPriority::SILENT:
-                break;
-
+        case LogPriority::UNKNOWN:
+        case LogPriority::DEFAULT:
+        case LogPriority::VERBOSE:
+        case LogPriority::DEBUG:
+        case LogPriority::INFO:
+            std::cout << tag << ": " << s << std::endl;
+            break;
+        case LogPriority::WARN:
+            std::cout << tag << ": " << s << std::endl;
+            break;
+        case LogPriority::ERR:
+        case LogPriority::FATAL:
+            std::cerr << tag << ": " << s << std::endl;
+            break;
+        case LogPriority::SILENT:
+            break;
         }
 
 #endif
-
     }
 };
 

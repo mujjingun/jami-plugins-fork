@@ -60,15 +60,14 @@ class Session;
 struct SessionOptions;
 class TensorShape;
 class Env;
-enum DataType:int;
-} // namespace namespace tensorflow
+enum DataType : int;
+} // namespace tensorflow
 
 #endif
 
-
-namespace jami
+namespace jami {
+class TensorflowInference
 {
-class TensorflowInference {
 public:
     /**
      * @brief TensorflowInference
@@ -102,7 +101,7 @@ public:
     void LoadGraph();
     tensorflow::Tensor imageTensor;
 
-#endif //TFLITE
+#endif // TFLITE
 
     /**
      * @brief runGraph
@@ -150,4 +149,4 @@ protected:
 
     bool allocated_ = false;
 };
-}
+} // namespace jami

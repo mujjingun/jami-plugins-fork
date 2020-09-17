@@ -15,18 +15,19 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA.
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA.
  */
 
 #pragma once
 // STL
 #include <condition_variable>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
-#include <map>
 // Filters
 #include "pluginInference.h"
 // AvFrame
@@ -41,50 +42,55 @@ extern "C" {
 
 namespace jami {
 
-class PluginProcessor {
+class PluginProcessor
+{
 public:
-	PluginProcessor(const std::string& dataPath);
+    PluginProcessor(const std::string& dataPath);
 
-	void initModel();
-	/**
-	 * @brief feedInput
-	 * Takes a frame and feeds it to the model storage for predictions
-	 * @param frame
-	 */
-	void feedInput(const cv::Mat& frame);
+    void initModel();
+    /**
+     * @brief feedInput
+     * Takes a frame and feeds it to the model storage for predictions
+     * @param frame
+     */
+    void feedInput(const cv::Mat& frame);
 
-	/**
-	 * @brief computePredictions
-	 * Uses the model to compute the predictions and store them in
-	 * computedPredictions
-	 */
-	void computePredictions();
+    /**
+     * @brief computePredictions
+     * Uses the model to compute the predictions and store them in
+     * computedPredictions
+     */
+    void computePredictions();
 
-	void printMask();
-	void drawMaskOnFrame(cv::Mat& frame, cv::Mat& frameReduced, std::vector<float>computedMask, int lineSize, int angle);
-	int getBackgroundRotation();
-	void setBackgroundRotation(int angle);
-	void setBackgroundImage(const std::string& backgroundPath);
-	void rotateFrame(int angle, cv::Mat& mat);
+    void printMask();
+    void drawMaskOnFrame(cv::Mat& frame,
+                         cv::Mat& frameReduced,
+                         std::vector<float> computedMask,
+                         int lineSize,
+                         int angle);
+    int getBackgroundRotation();
+    void setBackgroundRotation(int angle);
+    void setBackgroundImage(const std::string& backgroundPath);
+    void rotateFrame(int angle, cv::Mat& mat);
     bool hasBackground() const;
 
-	// Output predictions
-	std::vector<float> computedMask;
+    // Output predictions
+    std::vector<float> computedMask;
 
-	cv::Mat previousMasks[2];
-	cv::Mat backgroundImage;
+    cv::Mat previousMasks[2];
+    cv::Mat backgroundImage;
 
-	cv::Size kSize;
-	float scaleX = 0;
-	float scaleY = 0;
+    cv::Size kSize;
+    float scaleX = 0;
+    float scaleY = 0;
 
-	PluginInference pluginInference;
-	std::string backgroundPath;
+    PluginInference pluginInference;
+    std::string backgroundPath;
 
 private:
-	// Frame
-	cv::Mat frame;
-	int backgroundRotation = 0;
+    // Frame
+    cv::Mat frame;
+    int backgroundRotation = 0;
     bool hasBackground_ = false;
 };
 } // namespace jami

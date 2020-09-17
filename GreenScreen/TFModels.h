@@ -25,11 +25,14 @@
 #include <vector>
 #include "pluginParameters.h"
 
-struct TFModelConfiguration {
-    TFModelConfiguration (std::string& model): modelPath{model} {}
+struct TFModelConfiguration
+{
+    TFModelConfiguration(std::string& model)
+        : modelPath {model}
+    {}
     std::string modelPath;
     std::vector<unsigned int> normalizationValues;
-    std::vector<int> dims = {1, 385, 385, 3}; //model Input dimensions
+    std::vector<int> dims = {1, 385, 385, 3}; // model Input dimensions
     unsigned int numberOfRuns = 1;
     // TensorflowLite specific settings
 
@@ -48,14 +51,24 @@ struct TFModelConfiguration {
     std::string inputLayer = "sub_2";
     std::string outputLayer = "float_segments";
 #endif // TFLITE
-
 };
 
-struct TFModel : TFModelConfiguration {
-    TFModel(std::string&& model, std::string&& labels): TFModelConfiguration(model), labelsPath{labels}{}
-    TFModel(std::string& model, std::string& labels): TFModelConfiguration(model), labelsPath{labels}{}
-    TFModel(std::string&& model): TFModelConfiguration(model) {}
-    TFModel(std::string& model): TFModelConfiguration(model) {}
+struct TFModel : TFModelConfiguration
+{
+    TFModel(std::string&& model, std::string&& labels)
+        : TFModelConfiguration(model)
+        , labelsPath {labels}
+    {}
+    TFModel(std::string& model, std::string& labels)
+        : TFModelConfiguration(model)
+        , labelsPath {labels}
+    {}
+    TFModel(std::string&& model)
+        : TFModelConfiguration(model)
+    {}
+    TFModel(std::string& model)
+        : TFModelConfiguration(model)
+    {}
 
     std::string labelsPath = " ";
     unsigned int labelsPadding = 16;

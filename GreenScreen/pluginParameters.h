@@ -24,19 +24,20 @@
 #include <string>
 #include <map>
 
-struct PluginParameters {
+struct PluginParameters
+{
     std::string stream = "out";
 #ifdef TFLITE
     bool useGPU = false;
     std::string model = "mModel.tflite";
 #else
-    #ifndef CPU
-        bool useGPU = true;
-    #else
-        bool useGPU = false;
-    #endif
-        std::string model = "mModel.pb";
-#endif //TFLITE
+#ifndef CPU
+    bool useGPU = true;
+#else
+    bool useGPU = false;
+#endif
+    std::string model = "mModel.pb";
+#endif // TFLITE
     std::string image = "background2.png";
 };
 
