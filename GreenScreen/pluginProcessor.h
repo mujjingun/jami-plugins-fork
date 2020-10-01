@@ -81,16 +81,24 @@ public:
     cv::Mat backgroundImage;
 
     cv::Size kSize;
-    float scaleX = 0;
-    float scaleY = 0;
 
     PluginInference pluginInference;
     std::string backgroundPath;
+    int count = 0;
 
 private:
     // Frame
     cv::Mat frame;
     int backgroundRotation = 0;
     bool hasBackground_ = false;
+#ifdef TFLITE
+    int grabcutClass = 2;
+    int frameCount = 3;
+    float smoothFactors[2] = {0.3f, 0.05f};
+#else
+    int grabcutClass = 3;
+    int frameCount = 5;
+    float smoothFactors[3] = {0.6f, 0.3f, 0.1f};
+#endif
 };
 } // namespace jami
