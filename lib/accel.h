@@ -53,8 +53,7 @@ av_frame_new_side_data_from_buf(AVFrame* frame, enum AVFrameSideDataType type, A
 AVFrame*
 transferToMainMemory(AVFrame* framePtr, AVPixelFormat desiredFormat)
 {
-    AVFrame* out;
-
+    AVFrame* out = av_frame_alloc();
     auto desc = av_pix_fmt_desc_get(static_cast<AVPixelFormat>(framePtr->format));
 
     if (desc && not(desc->flags & AV_PIX_FMT_FLAG_HWACCEL)) {

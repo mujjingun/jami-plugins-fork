@@ -91,7 +91,6 @@ VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame)
             auto matrix_rotation = reinterpret_cast<int32_t*>(side_data->data);
             angle = static_cast<int>(av_display_rotation_get(matrix_rotation));
         }
-        pluginFrame = transferToMainMemory(pluginFrame, AV_PIX_FMT_NV12);
 
         //======================================================================================
         // GET RAW FRAME
@@ -101,7 +100,9 @@ VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame)
         int inputWidth = pluginFrame->width;
 
         fcopy.originalSize = cv::Size {inputWidth, inputHeight};
-        FrameUniquePtr bgrFrame = scaler.convertFormat(pluginFrame, AV_PIX_FMT_RGB24);
+        FrameUniquePtr bgrFrame = scaler.convertFormat(transferToMainMemory(pluginFrame,
+                                                                            AV_PIX_FMT_NV12),
+                                                       AV_PIX_FMT_RGB24);
         cv::Mat frame = cv::Mat {bgrFrame->height,
                                  bgrFrame->width,
                                  CV_8UC3,

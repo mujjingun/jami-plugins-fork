@@ -109,19 +109,17 @@ then
     -L"${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/" \
     -L"${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/opencv4/3rdparty/" \
     -L"${TF_LIBS_DIR}/${TF}/lib/${CONTRIB_PLATFORM}-gpu61/" \
-    -lswscale \
-    -lavutil \
+    -l:libswscale.a \
+    -l:libavutil.a \
     -lopencv_imgcodecs \
     -lopencv_imgproc \
     -lopencv_core \
+    -llibpng \
+    -lva \
     -ltensorflow_cc \
-    -lpng \
     -o "lib/${CONTRIB_PLATFORM}/${SO_FILE_NAME}"
 
     cp "${TF_LIBS_DIR}/${TF}/lib/${CONTRIB_PLATFORM}-gpu61/libtensorflow_cc.so" "lib/$CONTRIB_PLATFORM/libtensorflow_cc.so.2"
-    cp "/usr/lib/${CONTRIB_PLATFORM}/libswscale.so.4" "lib/$CONTRIB_PLATFORM"
-    cp "/usr/lib/${CONTRIB_PLATFORM}/libavutil.so.55" "lib/$CONTRIB_PLATFORM"
-    cp "/usr/lib/${CONTRIB_PLATFORM}/libpng16.so.16" "lib/$CONTRIB_PLATFORM"
     cp "${CUDALIBS}/libcudart.so" "lib/$CONTRIB_PLATFORM/libcudart.so.10.0"
     cp "${CUDNN}/libcublas.so.10" "lib/$CONTRIB_PLATFORM/libcublas.so.10.0"
     cp "${CUDALIBS}/libcufft.so.10" "lib/$CONTRIB_PLATFORM/libcufft.so.10.0"
@@ -167,19 +165,17 @@ then
         -L"${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/" \
         -L"${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/opencv4/3rdparty/" \
         -L"${TF_LIBS_DIR}/${TF}/lib/${CONTRIB_PLATFORM}/" \
-        -lswscale \
-        -lavutil \
+        -l:libswscale.a \
+        -l:libavutil.a \
         -lopencv_imgcodecs \
         -lopencv_imgproc \
         -lopencv_core \
         -ltensorflowlite \
-        -lpng \
+        -llibpng \
+        -lva \
         -o "lib/${CONTRIB_PLATFORM}/${SO_FILE_NAME}"
 
         cp "${TF_LIBS_DIR}/${TF}/lib/${CONTRIB_PLATFORM}/libtensorflowlite.so" "lib/$CONTRIB_PLATFORM"
-        cp "/usr/lib/${CONTRIB_PLATFORM}/libswscale.so.4" "lib/$CONTRIB_PLATFORM"
-        cp "/usr/lib/${CONTRIB_PLATFORM}/libavutil.so.55" "lib/$CONTRIB_PLATFORM"
-        cp "/usr/lib/${CONTRIB_PLATFORM}/libpng16.so.16" "lib/$CONTRIB_PLATFORM"
 
     elif [ "${PLATFORM}" = "android" ]
     then
