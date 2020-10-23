@@ -73,6 +73,7 @@ public:
     void setBackgroundImage(const std::string& backgroundPath);
     void rotateFrame(int angle, cv::Mat& mat);
     bool hasBackground() const;
+    void resetInitValues(const cv::Size& modelInputSize);
 
     // Output predictions
     std::vector<float> computedMask;
@@ -91,14 +92,19 @@ private:
     cv::Mat frame;
     int backgroundRotation = 0;
     bool hasBackground_ = false;
+    cv::Mat bgdModel, fgdModel;
+    int grabCutMode = 1; // cv::GC_INIT_WITH_MASK = 1;
+    int grabCutIterations = 5;
 #ifdef TFLITE
     int grabcutClass = 2;
     int frameCount = 3;
     float smoothFactors[2] = {0.3f, 0.05f};
+    float kernelSize = 0.1f;
 #else
     int grabcutClass = 3;
     int frameCount = 5;
     float smoothFactors[3] = {0.6f, 0.3f, 0.1f};
+    float kernelSize = 0.05f;
 #endif
 };
 } // namespace jami

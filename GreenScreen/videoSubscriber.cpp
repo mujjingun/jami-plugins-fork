@@ -120,6 +120,7 @@ VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame)
             pluginProcessor.pluginInference.setExpectedImageDimensions();
             fcopy.resizedSize = cv::Size {pluginProcessor.pluginInference.getImageWidth(),
                                           pluginProcessor.pluginInference.getImageHeight()};
+            pluginProcessor.resetInitValues(fcopy.resizedSize);
 
             cv::resize(clone, fcopy.resizedFrameRGB, fcopy.resizedSize);
             pluginProcessor.rotateFrame(angle, fcopy.resizedFrameRGB);

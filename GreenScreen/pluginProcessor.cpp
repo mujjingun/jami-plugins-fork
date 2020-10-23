@@ -147,6 +147,23 @@ PluginProcessor::printMask()
 }
 
 void
+PluginProcessor::resetInitValues(const cv::Size& modelInputSize)
+{
+    previousMasks[0] = cv::Mat(modelInputSize.height, modelInputSize.width, CV_32FC1, double(0.));
+    previousMasks[1] = cv::Mat(modelInputSize.height, modelInputSize.width, CV_32FC1, double(0.));
+    kSize = cv::Size(modelInputSize.width * kernelSize, modelInputSize.height * kernelSize);
+    if (kSize.height % 2 == 0) {
+        kSize.height -= 1;
+    }
+    if (kSize.width % 2 == 0) {
+        kSize.width -= 1;
+    }
+    count = 0;
+    grabCutMode = cv::GC_INIT_WITH_MASK;
+    grabCutIterations = 5;
+}
+
+void
 copyByLine(uchar* frameData, uchar* applyMaskData, const int lineSize, cv::Size size)
 {
     if (3 * size.width == lineSize) {
@@ -172,20 +189,10 @@ PluginProcessor::drawMaskOnFrame(
         return;
     }
 
-    if (previousMasks[0].empty()) {
-        previousMasks[0] = cv::Mat(frameReduced.rows, frameReduced.cols, CV_32FC1, double(0.));
-        previousMasks[1] = cv::Mat(frameReduced.rows, frameReduced.cols, CV_32FC1, double(0.));
-    }
-
     int maskSize = static_cast<int>(std::sqrt(computedMask.size()));
     cv::Mat maskImg(maskSize, maskSize, CV_32FC1, computedMask.data());
     cv::Mat* applyMask = &frameReduced;
     cv::Mat output;
-    kSize = cv::Size(frameReduced.cols * 0.1, frameReduced.rows * 0.1);
-    if (kSize.height % 2 == 0)
-        kSize.height -= 1;
-    if (kSize.width % 2 == 0)
-        kSize.width -= 1;
 
     if (count == 0) {
         rotateFrame(-angle, maskImg);
@@ -243,7 +250,11 @@ PluginProcessor::drawMaskOnFrame(
             if (cv::countNonZero(tfMask) != 0) {
 #endif
                 cv::Mat dilate;
-                cv::dilate(maskImg, dilate, cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize));
+                cv::dilate(maskImg,
+                           dilate,
+                           cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize),
+                           cv::Point(-1, -1),
+                           2);
                 cv::erode(maskImg,
                           maskImg,
                           cv::getStructuringElement(cv::MORPH_ELLIPSE, kSize),
@@ -258,8 +269,17 @@ PluginProcessor::drawMaskOnFrame(
                 maskImg.convertTo(maskImg, CV_8UC1);
                 applyMask->convertTo(*applyMask, CV_8UC1);
                 cv::Rect rect(1, 1, maskImg.rows, maskImg.cols);
-                cv::Mat bgdModel, fgdModel;
-                cv::grabCut(*applyMask, maskImg, rect, bgdModel, fgdModel, 2, cv::GC_INIT_WITH_MASK);
+                cv::grabCut(*applyMask,
+                            maskImg,
+                            rect,
+                            bgdModel,
+                            fgdModel,
+                            grabCutIterations,
+                            grabCutMode);
+
+                grabCutMode = cv::GC_EVAL;
+                grabCutIterations = 1;
+
                 maskImg = maskImg & 1;
 #ifdef TFLITE
                 cv::bitwise_and(maskImg, tfMask, maskImg);
@@ -267,7 +287,7 @@ PluginProcessor::drawMaskOnFrame(
 #endif
             maskImg.convertTo(maskImg, CV_32FC1);
             maskImg *= 255.;
-            GaussianBlur(maskImg, maskImg, kSize, 0); // float mask from 0 to 255.
+            GaussianBlur(maskImg, maskImg, cv::Size(7, 7), 0); // float mask from 0 to 255.
             maskImg = maskImg / 255.;
         }
         previousMasks[1] = previousMasks[0].clone();
