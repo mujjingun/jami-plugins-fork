@@ -41,8 +41,7 @@ def main():
             for folderName, subfolders, filenames in os.walk(outputBuild):
                 for filename in filenames:
                     filePath = os.path.join(folderName, filename)
-                    zipObj.write(filePath, folderName.split("/")
-                                 [-1][4:] + "/" + filename)
+                    zipObj.write(filePath, os.path.join(os.path.relpath(folderName, outputBuild), filename))
 
 
 if __name__ == '__main__':
