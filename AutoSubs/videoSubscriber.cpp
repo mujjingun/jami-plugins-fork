@@ -67,27 +67,6 @@ VideoSubscriber::VideoSubscriber(const std::string& dataPath)
     } else {
         Plog::log(Plog::LogPriority::INFO, TAG, "Font size set successfully");
     }
-
-    /**
-     * Waits for new frames and then process them
-     * Writes the predictions in computedPredictions
-     **/
-    processFrameThread = std::thread([this] {
-        while (running) {
-            std::unique_lock<std::mutex> l(inputLock);
-            inputCv.wait(l, [this] { return !running || newFrame; });
-            if (not running) {
-                break;
-            }
-
-            // TODO: feed input
-
-            newFrame = false;
-            l.unlock();
-
-            // TODO: compute predictions
-        }
-    });
 }
 
 VideoSubscriber::~VideoSubscriber()
@@ -97,7 +76,6 @@ VideoSubscriber::~VideoSubscriber()
     stop();
 
     // join processing thread
-    processFrameThread.join();
     Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 }
 
@@ -199,12 +177,6 @@ void VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
         frame_ptr->data[0],
         static_cast<std::size_t>(frame_ptr->linesize[0]));
 
-    if (!newFrame) {
-        std::lock_guard<std::mutex> l(inputLock);
-        newFrame = true;
-        inputCv.notify_all();
-    }
-
     // obtain result image
     rotate_image(frame, angle + 90);
 
@@ -257,8 +229,6 @@ void VideoSubscriber::detach()
 
 void VideoSubscriber::stop()
 {
-    running = false;
-    inputCv.notify_all();
 }
 
 } // namespace jami

@@ -37,7 +37,7 @@ PluginMediaHandler::PluginMediaHandler(std::map<std::string, std::string>&& ppm,
     setId(datapath_);
     preview_vs = std::make_shared<VideoSubscriber>(datapath_);
     opponent_vs = std::make_shared<VideoSubscriber>(datapath_);
-    audio_as = std::make_shared<AudioSubscriber>();
+    audio_as = std::make_shared<AudioSubscriber>(datapath_);
 }
 
 void PluginMediaHandler::notifyAVFrameSubject(const StreamData& data, jami::avSubjectPtr subject)

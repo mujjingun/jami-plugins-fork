@@ -19,6 +19,8 @@ set (preferencesFile preferences.json)
 find_package(Freetype REQUIRED)
 message(NOTICE "Freetype found: ${FREETYPE_LIBRARIES}")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
 if(WIN32)
     message(OS:\  WINDOWS\ ${CMAKE_SYSTEM_PROCESSOR})
     if (NOT ${CMAKE_CL_64})
@@ -51,6 +53,8 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
+
+add_subdirectory(model)
 
 set(plugin_SRC main.cpp
                pluginMediaHandler.cpp
@@ -88,7 +92,8 @@ target_link_directories(${ProjectName} PUBLIC ${CONTRIB_PATH}
                                         ${FFMPEG}/bin
                                         )
 
-target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs411 opencv_imgproc411 opencv_core411 zlib ${FREETYPE_LIBRARIES})
+target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs411 opencv_imgproc411 opencv_core411 zlib
+                        "${FREETYPE_LIBRARIES}" ASRModel)
 endif()
 
 if (UNIX)
@@ -104,7 +109,8 @@ target_link_directories(${ProjectName} PUBLIC ${CONTRIB_PATH}
                                         ${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib
                                         ${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/opencv4/3rdparty
                                         )
-target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs opencv_imgproc opencv_core ${FREETYPE_LIBRARIES})
+target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs opencv_imgproc opencv_core
+                        "${FREETYPE_LIBRARIES}" ASRModel)
 endif()
 
 add_custom_command(

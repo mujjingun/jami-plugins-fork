@@ -60,14 +60,5 @@ private:
 
     std::unique_ptr<VideoSubscriberPimpl> pimpl;
     FrameScaler scaler;
-
-    // Threading
-    std::thread processFrameThread;
-    std::mutex inputLock;
-    std::condition_variable inputCv;
-
-    // Status variables of the processing
-    bool running{true};
-    bool newFrame{false};
 };
 } // namespace jami
