@@ -10,6 +10,8 @@ extern "C" {
 // LOGGING
 #include <pluglog.h>
 
+#include <fstream>
+
 static const std::string TAG = "AutoSub";
 
 namespace jami {
@@ -141,6 +143,14 @@ void AudioSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
     auto offset = input_buffer.size();
     input_buffer.resize(offset + n_converted_samples);
     std::memcpy(&input_buffer[offset], dst_data[0], n_converted_samples * sizeof(std::int16_t));
+
+    if (input_buffer.size() > 16000 * 10) {
+        Plog::log(Plog::LogPriority::INFO, TAG, "writing samples to file");
+        std::ofstream file("output.pcm", std::ios::binary);
+        file.write(reinterpret_cast<char*>(input_buffer.data()),
+            input_buffer.size() * sizeof(std::int16_t));
+        input_buffer.clear();
+    }
 
     /*
     Plog::log(Plog::LogPriority::INFO, TAG,

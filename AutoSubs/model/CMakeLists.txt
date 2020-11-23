@@ -14,6 +14,8 @@ add_library(ASRModel STATIC
     feat/mel-computations.cc
     feat/srfft.cc
     feat/utils.cpp
+    feat/online-feature.cc
+    feat/feature-window.cc
 )
 
 target_link_libraries(ASRModel PRIVATE ${TORCH_LIBRARIES} ${BLAS_LIBRARIES})

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 struct ASRModelPimpl;
 
@@ -15,6 +16,9 @@ public:
 
 private:
     std::unique_ptr<ASRModelPimpl> pimpl;
+    int input_size, feats_length;
+    std::vector<float> input_buf;
+    std::vector<float> feature;
 };
 
 #endif // ASRMODEL_H

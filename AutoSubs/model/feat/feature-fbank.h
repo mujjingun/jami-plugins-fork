@@ -21,75 +21,16 @@
 #ifndef KALDI_FEAT_FEATURE_FBANK_H_
 #define KALDI_FEAT_FEATURE_FBANK_H_
 
+#include <cassert>
+#include <deque>
 #include <map>
 #include <string>
-#include <cassert>
 
 #include "mel-computations.h"
+#include "feature-window.h"
 #include "srfft.h"
 
 namespace kaldi {
-
-inline int RoundUpToNearestPowerOfTwo(int n)
-{
-    assert(n > 0);
-    n--;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    return n + 1;
-}
-
-struct FrameExtractionOptions {
-    float samp_freq;
-    float frame_shift_ms; // in milliseconds.
-    float frame_length_ms; // in milliseconds.
-    float dither; // Amount of dithering, 0.0 means no dither.
-    float preemph_coeff; // Preemphasis coefficient.
-    bool remove_dc_offset; // Subtract mean of wave before FFT.
-    std::string window_type; // e.g. Hamming window
-    // May be "hamming", "rectangular", "povey", "hanning", "sine", "blackman"
-    // "povey" is a window I made to be similar to Hamming but to go to zero at the
-    // edges, it's pow((0.5 - 0.5*cos(n/N*2*pi)), 0.85)
-    // I just don't think the Hamming window makes sense as a windowing function.
-    bool round_to_power_of_two;
-    float blackman_coeff;
-    bool snip_edges;
-    bool allow_downsample;
-    bool allow_upsample;
-    int max_feature_vectors;
-    FrameExtractionOptions()
-        : samp_freq(16000)
-        , frame_shift_ms(10.0)
-        , frame_length_ms(25.0)
-        , dither(1.0)
-        , preemph_coeff(0.97)
-        , remove_dc_offset(true)
-        , window_type("povey")
-        , round_to_power_of_two(true)
-        , blackman_coeff(0.42)
-        , snip_edges(true)
-        , allow_downsample(false)
-        , allow_upsample(false)
-        , max_feature_vectors(-1)
-    {
-    }
-
-    int WindowShift() const
-    {
-        return static_cast<int>(samp_freq * 0.001 * frame_shift_ms);
-    }
-    int WindowSize() const
-    {
-        return static_cast<int>(samp_freq * 0.001 * frame_length_ms);
-    }
-    int PaddedWindowSize() const
-    {
-        return (round_to_power_of_two ? RoundUpToNearestPowerOfTwo(WindowSize()) : WindowSize());
-    }
-};
 
 /// FbankOptions contains basic options for computing filterbank features.
 /// It only includes things that can be done in a "stateless" way, i.e.
@@ -112,7 +53,7 @@ struct FbankOptions {
         // this seems to be common for 16khz-sampled data,
         // but for 8khz-sampled data, 15 may be better.
         use_energy(false)
-        , energy_floor(0.0)
+        , energy_floor(1.0)
         , raw_energy(true)
         , htk_compat(false)
         , use_log_fbank(true)
