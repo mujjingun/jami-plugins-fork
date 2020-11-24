@@ -1,6 +1,8 @@
 #include "../asrmodel.h"
 
+#include <iostream>
 #include <fstream>
+#include <chrono>
 
 int main()
 {
@@ -20,7 +22,12 @@ int main()
         in.read(reinterpret_cast<char*>(buf.data()), length);
     }
 
+    using namespace std::chrono;
+    auto start = system_clock::now();
     model.process(buf.data(), buf.size());
+    auto elapsed = system_clock::now() - start;
+
+    std::cout << "elapsed = " << duration_cast<milliseconds>(elapsed).count() << "ms\n";
 
     return 0;
 }

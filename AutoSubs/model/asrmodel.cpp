@@ -7,6 +7,7 @@
 // logging
 #include <pluglog.h>
 
+#include <algorithm>
 #include <cuchar>
 
 #include "codes.h"
@@ -24,6 +25,7 @@ static const kaldi::FbankOptions options = [] {
 }();
 
 struct ASRModelPimpl {
+    torch::Device device;
     torch::jit::script::Module module;
     kaldi::OnlineFbank fbank;
 };
@@ -44,14 +46,19 @@ static std::string u32_to_str(std::u32string const& str)
 
 ASRModel::ASRModel(std::string const& model_path) try
     : pimpl(new ASRModelPimpl{
+          torch::Device(torch::kCPU),
           torch::jit::load(model_path),
           kaldi::OnlineFbank(options),
       }),
       input_size(options.frame_opts.PaddedWindowSize()),
-      feats_length(306) {
+      feats_length(1000) // 10s of audio
+{
+    pimpl->module.to(pimpl->device);
     Plog::log(Plog::LogPriority::INFO, TAG, "Torch module loaded successfully");
+
     input_buf.reserve(input_size);
     feature.resize(options.mel_opts.num_bins);
+    feature_buf.reserve(options.mel_opts.num_bins * feats_length);
 } catch (const c10::Error& e) {
     Plog::log(Plog::LogPriority::ERR, TAG, "Could not load torch model");
     throw;
@@ -63,6 +70,8 @@ ASRModel::~ASRModel()
 
 std::u32string ASRModel::process(int16_t* buf, int size)
 {
+    torch::NoGradGuard no_grad;
+
     // convert buf into mel spectrum
     input_buf.resize(size);
     for (int i = 0; i < size; ++i) {
@@ -70,26 +79,44 @@ std::u32string ASRModel::process(int16_t* buf, int size)
     }
     pimpl->fbank.AcceptWaveform(16000, input_buf);
 
+    std::u32string str;
+
     for (int i = 0; i < pimpl->fbank.NumFramesReady(); ++i) {
         pimpl->fbank.GetFrame(i, &feature);
-        // TODO: feed into asr model
-    }
+        std::copy(feature.begin(), feature.end(), std::back_inserter(feature_buf));
 
-    std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(torch::zeros({306, 80}));
+        if (feature_buf.size() == std::size_t(options.mel_opts.num_bins * feats_length)) {
+            float avg = std::accumulate(feature_buf.begin(), feature_buf.end(), 0.f);
+            avg /= feature_buf.size();
+            for (std::size_t j = 0; j < feature_buf.size(); ++j) {
+                feature_buf[j] -= avg;
+            }
 
-    auto output = pimpl->module.forward(inputs).toTensor();
+            // clang-format off
+            auto output = pimpl->module.forward(
+               std::vector<torch::jit::IValue>{
+                   torch::from_blob(
+                       feature_buf.data(),
+                       {feats_length, options.mel_opts.num_bins},
+                       torch::TensorOptions().dtype(torch::kFloat32))
+                       .to(pimpl->device),
+            }).toTensor();
+            // clang-format on
 
-    std::u32string str;
-    for (int i = 0; i < output.size(0); ++i) {
-        int ch = output[i].item().toInt();
-        str.push_back(id_to_char.at(ch));
-        if (ch == 2) {
-            break;
+            // convert output to string
+            for (int j = 0; j < output.size(0); ++j) {
+                int ch = output[j].item().toInt();
+                if (ch == 2) {
+                    break;
+                }
+                str.push_back(id_to_char.at(ch));
+            }
+
+            feature_buf.clear();
         }
     }
 
-    Plog::log(Plog::LogPriority::INFO, TAG, u32_to_str(str));
+    std::cout << u32_to_str(str) << "\n";
 
     return str;
 }

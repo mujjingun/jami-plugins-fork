@@ -18,7 +18,7 @@ private:
     std::unique_ptr<ASRModelPimpl> pimpl;
     int input_size, feats_length;
     std::vector<float> input_buf;
-    std::vector<float> feature;
+    std::vector<float> feature, feature_buf;
 };
 
 #endif // ASRMODEL_H
