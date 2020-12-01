@@ -22,8 +22,9 @@
 #pragma once
 
 // Project
-#include "videoSubscriber.h"
 #include "audiosubscriber.h"
+#include "messagequeue.h"
+#include "videoSubscriber.h"
 
 // Plugin
 #include "plugin/jamiplugin.h"
@@ -33,10 +34,26 @@ using avSubjectPtr = std::weak_ptr<jami::Observable<AVFrame*>>;
 
 namespace jami {
 
-class PluginMediaHandler : public jami::CallMediaHandler
-{
+class MessageSender : public jami::Observer<AVFrame*> {
 public:
-    PluginMediaHandler(std::map<std::string, std::string>&& ppm, std::string&& dataPath);
+    MessageSender(const JAMI_PluginAPI* api, MessageQueue* my_voice);
+    void setCallId(std::string const& call_id);
+    virtual void update(jami::Observable<AVFrame*>*, AVFrame* const&) override;
+    virtual void attached(jami::Observable<AVFrame*>*) override;
+    virtual void detached(jami::Observable<AVFrame*>*) override;
+
+private:
+    const JAMI_PluginAPI* api;
+    std::string callId;
+    MessageQueue* my_voice;
+};
+
+class PluginMediaHandler : public jami::CallMediaHandler {
+public:
+    PluginMediaHandler(
+        const JAMI_PluginAPI* api,
+        std::map<std::string, std::string>&& ppm, std::string&& dataPath,
+        MessageQueue* my_voice, MessageQueue* incoming_subs);
     ~PluginMediaHandler() override;
 
     virtual void notifyAVFrameSubject(const StreamData& data, avSubjectPtr subject) override;
@@ -46,13 +63,18 @@ public:
     virtual void setPreferenceAttribute(const std::string& key, const std::string& value) override;
     virtual bool preferenceMapHasKey(const std::string& key) override;
 
-    std::shared_ptr<VideoSubscriber> preview_vs, opponent_vs;
-    std::shared_ptr<AudioSubscriber> audio_as;
-
     std::string dataPath() const { return datapath_; }
 
 private:
+    const JAMI_PluginAPI* api;
     const std::string datapath_;
     std::map<std::string, std::string> ppm_;
+
+    std::shared_ptr<VideoSubscriber> preview_vs, opponent_vs;
+    std::shared_ptr<AudioSubscriber> audio_as;
+    std::shared_ptr<MessageSender> msg_sender;
+
+    MessageQueue* my_voice;
+    MessageQueue* incoming_subs;
 };
 } // namespace jami

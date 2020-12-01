@@ -19,11 +19,16 @@
  */
 
 #include <iostream>
-#include <string.h>
-#include <thread>
 #include <memory>
 #include <plugin/jamiplugin.h>
+#include <string.h>
+#include <thread>
+
+#include "chathandler.h"
+#include "messagequeue.h"
 #include "pluginMediaHandler.h"
+
+#include <pluglog.h>
 
 #ifdef WIN32
 #define EXPORT_PLUGIN __declspec(dllexport)
@@ -34,17 +39,25 @@
 #define AutoSubs_VERSION_MAJOR 1
 #define AutoSubs_VERSION_MINOR 0
 
+static jami::MessageQueue* my_voice{};
+static jami::MessageQueue* incoming_subs{};
+
 extern "C" {
-void
-pluginExit(void)
-{}
+void pluginExit(void)
+{
+    Plog::log(Plog::LogPriority::INFO, "AutoSubs", "pluginExit");
+    delete my_voice;
+    delete incoming_subs;
+}
 
 EXPORT_PLUGIN JAMI_PluginExitFunc
 JAMI_dynPluginInit(const JAMI_PluginAPI* api)
 {
-    std::cout << "**************************" << std::endl << std::endl;
+    std::cout << "**************************" << std::endl
+              << std::endl;
     std::cout << "**    AutoSubs PLUGIN   **" << std::endl;
-    std::cout << "**************************" << std::endl << std::endl;
+    std::cout << "**************************" << std::endl
+              << std::endl;
     std::cout << " Version " << AutoSubs_VERSION_MAJOR << "." << AutoSubs_VERSION_MINOR
               << std::endl;
     std::cout << "Compilation time = " << __TIME__ << "\n";
@@ -55,11 +68,18 @@ JAMI_dynPluginInit(const JAMI_PluginAPI* api)
         api->invokeService(api, "getPluginPreferences", &ppm);
         std::string dataPath;
         api->invokeService(api, "getPluginDataPath", &dataPath);
-        auto fmp = std::make_unique<jami::PluginMediaHandler>(std::move(ppm), std::move(dataPath));
 
-        if (!api->manageComponent(api, "CallMediaHandlerManager", fmp.release())) {
-            return pluginExit;
-        }
+        my_voice = new jami::MessageQueue{};
+        incoming_subs = new jami::MessageQueue{};
+
+        auto chat = std::make_unique<jami::ChatHandler>(incoming_subs);
+        api->manageComponent(api, "ConversationHandlerManager", chat.release());
+
+        auto fmp = std::make_unique<jami::PluginMediaHandler>(api,
+            std::move(ppm), std::move(dataPath), my_voice, incoming_subs);
+        api->manageComponent(api, "CallMediaHandlerManager", fmp.release());
+
+        return pluginExit;
     }
     return nullptr;
 }

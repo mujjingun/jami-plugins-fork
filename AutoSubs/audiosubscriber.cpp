@@ -16,8 +16,9 @@ static const std::string TAG = "AutoSub";
 
 namespace jami {
 
-AudioSubscriber::AudioSubscriber(const std::string& dataPath)
+AudioSubscriber::AudioSubscriber(const std::string& dataPath, MessageQueue* queue)
     : asrModel(dataPath + separator() + "model.zip")
+    , queue(queue)
 {
     swr_ctx = swr_alloc();
     if (!swr_ctx) {
@@ -50,13 +51,12 @@ AudioSubscriber::AudioSubscriber(const std::string& dataPath)
 
 AudioSubscriber::~AudioSubscriber()
 {
-    std::ostringstream oss;
-    oss << "~AudioSubscriber" << std::endl;
+    Plog::log(Plog::LogPriority::INFO, TAG, "~AudioSubscriber");
+
     stop();
 
     // join processing thread
     processFrameThread.join();
-    Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
 
     // free resampler
     if (swr_ctx) {
@@ -144,7 +144,9 @@ void AudioSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
     input_buffer.resize(offset + n_converted_samples);
     std::memcpy(&input_buffer[offset], dst_data[0], n_converted_samples * sizeof(std::int16_t));
 
-    if (input_buffer.size() > 16000 * 10) {
+    if (input_buffer.size() > 16000 * 3) {
+        queue->setMessage("hello" + std::to_string(input_buffer[0]));
+
         Plog::log(Plog::LogPriority::INFO, TAG, "writing samples to file");
         std::ofstream file("output.pcm", std::ios::binary);
         file.write(reinterpret_cast<char*>(input_buffer.data()),

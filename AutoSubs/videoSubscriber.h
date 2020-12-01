@@ -29,11 +29,13 @@ extern "C" {
 // STl
 #include <condition_variable>
 #include <map>
-#include <thread>
 #include <memory>
+#include <thread>
 
 // Frame Scaler
 #include <framescaler.h>
+
+#include "messagequeue.h"
 
 namespace jami {
 
@@ -41,7 +43,7 @@ struct VideoSubscriberPimpl;
 
 class VideoSubscriber : public jami::Observer<AVFrame*> {
 public:
-    VideoSubscriber(const std::string& dataPath);
+    VideoSubscriber(const std::string& dataPath, MessageQueue* queue);
     ~VideoSubscriber();
 
     virtual void update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame) override;
@@ -57,6 +59,8 @@ private:
 
     // Data
     std::string path_;
+
+    MessageQueue* queue;
 
     std::unique_ptr<VideoSubscriberPimpl> pimpl;
     FrameScaler scaler;

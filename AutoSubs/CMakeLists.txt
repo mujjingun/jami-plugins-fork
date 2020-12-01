@@ -61,6 +61,9 @@ set(plugin_SRC main.cpp
                pluginParameters.cpp
                videoSubscriber.cpp
                audiosubscriber.cpp
+               chathandler.cpp
+               chatobserver.cpp
+               messagequeue.cpp
                )
 
 set(plugin_HDR pluginMediaHandler.h

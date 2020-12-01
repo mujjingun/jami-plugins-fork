@@ -20,6 +20,7 @@
  */
 
 #include "pluginMediaHandler.h"
+#include "plugin/conversationhandler.h"
 #include "pluginParameters.h"
 
 // Logger
@@ -28,16 +29,21 @@ static const std::string TAG = "AutoSub";
 
 namespace jami {
 
-PluginMediaHandler::PluginMediaHandler(std::map<std::string, std::string>&& ppm,
-    std::string&& datapath)
-    : datapath_{datapath}
+PluginMediaHandler::PluginMediaHandler(
+    const JAMI_PluginAPI* api, std::map<std::string, std::string>&& ppm,
+    std::string&& datapath, MessageQueue* my_voice, MessageQueue* incoming_subs)
+    : api(api)
+    , datapath_{datapath}
     , ppm_{ppm}
+    , my_voice(my_voice)
+    , incoming_subs(incoming_subs)
 {
     setGlobalPluginParameters(ppm_);
     setId(datapath_);
-    preview_vs = std::make_shared<VideoSubscriber>(datapath_);
-    opponent_vs = std::make_shared<VideoSubscriber>(datapath_);
-    audio_as = std::make_shared<AudioSubscriber>(datapath_);
+    preview_vs = std::make_shared<VideoSubscriber>(datapath_, my_voice);
+    opponent_vs = std::make_shared<VideoSubscriber>(datapath_, incoming_subs);
+    audio_as = std::make_shared<AudioSubscriber>(datapath_, my_voice);
+    msg_sender = std::make_shared<MessageSender>(api, my_voice);
 }
 
 void PluginMediaHandler::notifyAVFrameSubject(const StreamData& data, jami::avSubjectPtr subject)
@@ -46,11 +52,16 @@ void PluginMediaHandler::notifyAVFrameSubject(const StreamData& data, jami::avSu
     if (data.type == StreamType::video) {
         if (!data.direction) {
             // my image
-            Plog::log(Plog::LogPriority::INFO, TAG, "attach preview_vs");
+            Plog::log(Plog::LogPriority::INFO, TAG, "attach preview_vs: " + data.source + " " + data.id);
             subject->attach(preview_vs.get());
+
+            // attach message sender
+            msg_sender->setCallId(data.id);
+            subject->attach(msg_sender.get());
+
         } else if (data.direction) {
             // the image I receive from the others on the call
-            Plog::log(Plog::LogPriority::INFO, TAG, "attach opponent_vs");
+            Plog::log(Plog::LogPriority::INFO, TAG, "attach opponent_vs: " + data.source + " " + data.id);
             subject->attach(opponent_vs.get());
         }
     } else if (data.type == StreamType::audio) {
@@ -94,4 +105,37 @@ PluginMediaHandler::~PluginMediaHandler()
     Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
     detach();
 }
+
+MessageSender::MessageSender(const JAMI_PluginAPI* api, MessageQueue* my_voice)
+    : api(api)
+    , my_voice(my_voice)
+{
+}
+
+void MessageSender::setCallId(const std::string& call_id)
+{
+    callId = call_id;
+}
+
+void MessageSender::update(jami::Observable<AVFrame*>*, AVFrame* const&)
+{
+}
+
+void MessageSender::attached(jami::Observable<AVFrame*>*)
+{
+    Plog::log(Plog::LogPriority::INFO, TAG, "MessageSender::attached");
+
+    my_voice->addEventListener([this](std::string const& text) {
+        std::map<std::string, std::string> content;
+        content["text/plain"] = text;
+        CallTextMessage msg{callId, content};
+        api->invokeService(api, "sendCallTextMessage", &msg);
+    });
+}
+
+void MessageSender::detached(jami::Observable<AVFrame*>*)
+{
+    my_voice->removeAllEventListeners();
+}
+
 } // namespace jami

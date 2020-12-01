@@ -26,6 +26,8 @@ extern "C" {
 #include <libavutil/display.h>
 }
 
+#include <codecvt>
+
 // opencv
 #include <opencv2/imgproc.hpp>
 
@@ -50,8 +52,9 @@ struct VideoSubscriberPimpl {
     FT_Face face;
 };
 
-VideoSubscriber::VideoSubscriber(const std::string& dataPath)
+VideoSubscriber::VideoSubscriber(const std::string& dataPath, MessageQueue* queue)
     : path_{dataPath}
+    , queue(queue)
     , pimpl(new VideoSubscriberPimpl{})
 {
     auto font_path = (dataPath + separator() + "KoPubDotumBold.ttf");
@@ -71,12 +74,10 @@ VideoSubscriber::VideoSubscriber(const std::string& dataPath)
 
 VideoSubscriber::~VideoSubscriber()
 {
-    std::ostringstream oss;
-    oss << "~MediaProcessor" << std::endl;
     stop();
 
     // join processing thread
-    Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
+    Plog::log(Plog::LogPriority::INFO, TAG, "~MediaProcessor");
 }
 
 void rotate_image(cv::Mat& mat, int angle)
@@ -90,8 +91,13 @@ void rotate_image(cv::Mat& mat, int angle)
     }
 }
 
-void drawText(cv::Mat& mat, FT_Face face, std::u32string const& str)
+void drawText(cv::Mat& mat, FT_Face face, std::string const& u8str)
 {
+    // convert to utf32
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> u32conv;
+    std::u32string str = u32conv.from_bytes(u8str);
+
+    // estimate text size
     int width = 0;
     int height = 0;
     int descender = 0;
@@ -112,13 +118,16 @@ void drawText(cv::Mat& mat, FT_Face face, std::u32string const& str)
         descender = std::max(descender, static_cast<int>(face->glyph->bitmap.rows - face->glyph->bitmap_top));
     }
 
+    // set text start position
     cv::Point pos(mat.cols / 4, mat.rows / 2 - width / 2);
 
+    // draw background
     cv::rectangle(mat,
         cv::Point(pos.x - descender - 5, pos.y - 10),
         cv::Point(pos.x + height + 5, pos.y + width + 10),
         cv::Scalar::all(0), cv::FILLED);
 
+    // draw text
     for (std::size_t n = 0; n < str.size(); ++n) {
         auto err = FT_Load_Char(face, str[n], FT_LOAD_RENDER);
         if (err) {
@@ -180,8 +189,7 @@ void VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
     // obtain result image
     rotate_image(frame, angle + 90);
 
-    std::u32string str = U"Hello안녕";
-    drawText(frame, pimpl->face, str);
+    drawText(frame, pimpl->face, queue->message());
 
     rotate_image(frame, -angle - 90);
 

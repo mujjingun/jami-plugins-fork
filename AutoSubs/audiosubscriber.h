@@ -14,6 +14,7 @@ extern "C" {
 #include <thread>
 
 #include "model/asrmodel.h"
+#include "messagequeue.h"
 
 struct SwrContext;
 
@@ -21,7 +22,7 @@ namespace jami {
 
 class AudioSubscriber : public jami::Observer<AVFrame*> {
 public:
-    AudioSubscriber(const std::string& dataPath);
+    AudioSubscriber(const std::string& dataPath, MessageQueue* queue);
     ~AudioSubscriber();
 
     virtual void update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame) override;
@@ -37,6 +38,7 @@ private:
 
     // ASR model
     ASRModel asrModel;
+    MessageQueue* queue;
 
     // Threading
     std::thread processFrameThread;
