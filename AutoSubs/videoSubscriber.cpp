@@ -22,8 +22,11 @@
 #include "videoSubscriber.h"
 // Use for display rotation matrix
 extern "C" {
-#include <accel.h>
+#include <libavutil/buffer.h>
 #include <libavutil/display.h>
+#include <libavutil/frame.h>
+#include <libavutil/hwcontext.h>
+#include <libavutil/pixdesc.h>
 }
 
 #include <codecvt>
@@ -98,6 +101,7 @@ void drawText(cv::Mat& mat, FT_Face face, std::string const& u8str)
     std::u32string str = u32conv.from_bytes(u8str);
 
     // estimate text size
+    // TODO: break lines
     int width = 0;
     int height = 0;
     int descender = 0;
@@ -145,12 +149,43 @@ void drawText(cv::Mat& mat, FT_Face face, std::string const& u8str)
                 int x = pos.y + face->glyph->bitmap_left + j;
                 int y = pos.x + face->glyph->bitmap_top - i;
                 auto color = face->glyph->bitmap.buffer[i * face->glyph->bitmap.pitch + j];
-                mat.at<cv::Vec3b>(x, y) = cv::Vec3b::all(color);
+
+                if (x >= 0 && y >= 0 && x < mat.rows && y < mat.cols) {
+                    mat.at<cv::Vec3b>(x, y) = cv::Vec3b::all(color);
+                }
             }
         }
 
         pos.y += face->glyph->advance.x >> 6;
     }
+}
+
+static FrameUniquePtr transferToMainMemory(AVFrame* framePtr, AVPixelFormat desiredFormat)
+{
+    FrameUniquePtr out{av_frame_alloc(), [](AVFrame* frame) {
+                           if (frame) {
+                               av_frame_free(&frame);
+                           }
+                       }};
+
+    auto desc = av_pix_fmt_desc_get(static_cast<AVPixelFormat>(framePtr->format));
+
+    if (desc && not(desc->flags & AV_PIX_FMT_FLAG_HWACCEL)) {
+        return FrameUniquePtr{framePtr, [](AVFrame*) {}};
+    }
+
+    out->format = desiredFormat;
+    if (av_hwframe_transfer_data(out.get(), framePtr, 0) < 0) {
+        return FrameUniquePtr{framePtr, [](AVFrame*) {}};
+    }
+
+    out->pts = framePtr->pts;
+    if (AVFrameSideData* side_data = av_frame_get_side_data(framePtr, AV_FRAME_DATA_DISPLAYMATRIX)) {
+        av_frame_new_side_data_from_buf(out.get(),
+            AV_FRAME_DATA_DISPLAYMATRIX,
+            av_buffer_ref(side_data->buf));
+    }
+    return out;
 }
 
 void VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame)
@@ -167,17 +202,10 @@ void VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
     if (side_data) {
         auto matrix_rotation = reinterpret_cast<int32_t*>(side_data->data);
         angle = static_cast<int>(av_display_rotation_get(matrix_rotation));
-        /*
-        Plog::log(Plog::LogPriority::INFO, TAG,
-            "matrix = \n[[" + std::to_string(matrix_rotation[0]) + " " + std::to_string(matrix_rotation[1]) + " " + std::to_string(matrix_rotation[2]) + "]\n"
-                + "[" + std::to_string(matrix_rotation[3]) + " " + std::to_string(matrix_rotation[4]) + " " + std::to_string(matrix_rotation[5]) + "]\n"
-                + "[" + std::to_string(matrix_rotation[6]) + " " + std::to_string(matrix_rotation[7]) + " " + std::to_string(matrix_rotation[8]) + "]]\n"
-                + "angle = " + std::to_string(angle));
-        */
     }
 
-    FrameUniquePtr frame_ptr = scaler.convertFormat(
-        transferToMainMemory(iFrame, AV_PIX_FMT_NV12), AV_PIX_FMT_RGB24);
+    auto mem_ptr = transferToMainMemory(iFrame, AV_PIX_FMT_NV12);
+    FrameUniquePtr frame_ptr = scaler.convertFormat(mem_ptr.get(), AV_PIX_FMT_RGB24);
 
     auto frame = cv::Mat(
         frame_ptr->height,

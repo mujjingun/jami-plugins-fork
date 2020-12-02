@@ -38,7 +38,6 @@ private:
 
     // ASR model
     ASRModel asrModel;
-    MessageQueue* queue;
 
     // Threading
     std::thread processFrameThread;

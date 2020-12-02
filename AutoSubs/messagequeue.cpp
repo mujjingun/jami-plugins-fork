@@ -6,7 +6,8 @@ namespace jami {
 
 MessageQueue::MessageQueue()
     : m_event_listeners{}
-    , event_loop_thread{[this] {
+{
+    event_loop_thread = std::thread([this] {
         while (running) {
             std::string msg;
             {
@@ -21,12 +22,11 @@ MessageQueue::MessageQueue()
             {
                 std::lock_guard guard(m_event_listeners_mtx);
                 for (auto& listener : m_event_listeners) {
-                    listener(m_msg);
+                    listener(msg);
                 }
             }
         }
-    }}
-{
+    });
 }
 
 MessageQueue::~MessageQueue()
@@ -40,16 +40,22 @@ MessageQueue::~MessageQueue()
 
 void MessageQueue::setMessage(const std::string& msg)
 {
-    std::lock_guard guard(m_mtx);
-    m_msg = msg;
-    updated = true;
+    {
+        std::lock_guard guard(m_event_mtx);
+        m_msg = msg;
+        updated = true;
+    }
     cv.notify_all();
 }
 
 std::string MessageQueue::message() const
 {
-    std::lock_guard guard(m_mtx);
-    return m_msg;
+    std::string result;
+    {
+        std::lock_guard guard(m_event_mtx);
+        result = m_msg;
+    }
+    return result;
 }
 
 void MessageQueue::addEventListener(MessageQueue::event_listener_t&& listener)

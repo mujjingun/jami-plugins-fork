@@ -28,8 +28,7 @@ private:
     std::condition_variable cv;
     std::list<event_listener_t> m_event_listeners;
     std::thread event_loop_thread;
-    mutable std::mutex m_mtx{};
-    std::mutex m_event_mtx{};
+    mutable std::mutex m_event_mtx{};
     std::mutex m_event_listeners_mtx{};
 
     std::string m_msg{};

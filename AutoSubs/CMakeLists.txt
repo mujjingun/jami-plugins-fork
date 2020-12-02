@@ -47,7 +47,7 @@ message(JPL\ assembling\ path:\ ${JPL_DIRECTORY})
 message(JPL\ path:\ ${JPL_DIRECTORY}/../../../build/${ProjectName}/${JPL_FILE_NAME})
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
@@ -114,6 +114,8 @@ target_link_directories(${ProjectName} PUBLIC ${CONTRIB_PATH}
                                         )
 target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs opencv_imgproc opencv_core
                         "${FREETYPE_LIBRARIES}" ASRModel)
+
+target_compile_options(${ProjectName} PRIVATE)
 endif()
 
 add_custom_command(

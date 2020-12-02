@@ -11,7 +11,6 @@ namespace jami {
 ChatObserver::ChatObserver(MessageQueue* queue)
     : queue(queue)
 {
-    Plog::log(Plog::LogPriority::INFO, TAG, "ChatObserver(" + std::to_string((std::uintptr_t)queue) + ")");
 }
 
 ChatObserver::~ChatObserver()

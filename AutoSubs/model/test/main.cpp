@@ -1,13 +1,12 @@
 #include "../asrmodel.h"
 
-#include <iostream>
-#include <fstream>
+#include <algorithm>
 #include <chrono>
+#include <fstream>
+#include <iostream>
 
 int main()
 {
-    std::setlocale(LC_ALL, "");
-
     ASRModel model("data/model.zip");
 
     std::vector<std::int16_t> buf;
@@ -22,12 +21,7 @@ int main()
         in.read(reinterpret_cast<char*>(buf.data()), length);
     }
 
-    using namespace std::chrono;
-    auto start = system_clock::now();
-    model.process(buf.data(), buf.size());
-    auto elapsed = system_clock::now() - start;
-
-    std::cout << "elapsed = " << duration_cast<milliseconds>(elapsed).count() << "ms\n";
+    auto output = model.process(buf.data(), buf.size());
 
     return 0;
 }

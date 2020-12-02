@@ -18,7 +18,6 @@ namespace jami {
 
 AudioSubscriber::AudioSubscriber(const std::string& dataPath, MessageQueue* queue)
     : asrModel(dataPath + separator() + "model.zip")
-    , queue(queue)
 {
     swr_ctx = swr_alloc();
     if (!swr_ctx) {
@@ -29,22 +28,29 @@ AudioSubscriber::AudioSubscriber(const std::string& dataPath, MessageQueue* queu
 
     /**
      * Waits for new frames and then process them
-     * Writes the predictions in computedPredictions
+     * Writes the predictions to queue
      **/
-    processFrameThread = std::thread([this] {
+    processFrameThread = std::thread([queue, this] {
+        std::vector<std::int16_t> input_copy;
         while (running) {
             std::unique_lock<std::mutex> l(inputLock);
             inputCv.wait(l, [this] { return !running || newFrame; });
-            if (not running) {
+            if (!running) {
                 break;
             }
 
-            // TODO: feed input
+            // copy input
+            std::swap(input_copy, input_buffer);
+            input_buffer.clear();
 
             newFrame = false;
             l.unlock();
 
-            // TODO: compute predictions
+            // compute predictions
+            auto output = asrModel.process(input_copy.data(), int(input_copy.size()));
+            if (output.size() > 0) {
+                queue->setMessage(output);
+            }
         }
     });
 }
@@ -138,27 +144,19 @@ void AudioSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
         Plog::log(Plog::LogPriority::ERR, TAG, "Error while converting");
     }
 
-    // push resulting samples to buffer
-    // TODO: use a ring buffer
-    auto offset = input_buffer.size();
-    input_buffer.resize(offset + n_converted_samples);
-    std::memcpy(&input_buffer[offset], dst_data[0], n_converted_samples * sizeof(std::int16_t));
+    // feed input to processing thread
+    {
+        std::lock_guard guard(inputLock);
 
-    if (input_buffer.size() > 16000 * 3) {
-        queue->setMessage("hello" + std::to_string(input_buffer[0]));
+        // push resulting samples to buffer
+        // TODO: use a ring buffer
+        auto offset = input_buffer.size();
+        input_buffer.resize(offset + n_converted_samples);
+        std::memcpy(&input_buffer[offset], dst_data[0], n_converted_samples * sizeof(std::int16_t));
 
-        Plog::log(Plog::LogPriority::INFO, TAG, "writing samples to file");
-        std::ofstream file("output.pcm", std::ios::binary);
-        file.write(reinterpret_cast<char*>(input_buffer.data()),
-            input_buffer.size() * sizeof(std::int16_t));
-        input_buffer.clear();
+        newFrame = true;
     }
-
-    /*
-    Plog::log(Plog::LogPriority::INFO, TAG,
-        "in = " + std::to_string(iFrame->nb_samples) + ", out = " + std::to_string(n_converted_samples)
-            + ", dst_bufsize = " + std::to_string(dst_bufsize));
-    */
+    inputCv.notify_all();
 }
 
 void AudioSubscriber::attached(jami::Observable<AVFrame*>* observable)
