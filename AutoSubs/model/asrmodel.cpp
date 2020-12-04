@@ -49,7 +49,7 @@ ASRModel::ASRModel(std::string const& model_path) try
     pimpl->module.to(pimpl->device);
     Plog::log(Plog::LogPriority::INFO, TAG, "Torch module loaded successfully");
 
-    if (fvad_set_mode(pimpl->vad, 3) < 0) {
+    if (fvad_set_mode(pimpl->vad, 0) < 0) {
         Plog::log(Plog::LogPriority::ERR, TAG, "invalid vad mode");
         throw std::runtime_error("invalid vad mode");
     }
