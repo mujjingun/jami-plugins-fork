@@ -4,4 +4,5 @@
 config.mak
 *Libs*
 */build-local
-*/model.zip
+AutoSubs/data/model.zip
+AutoSubs/libs

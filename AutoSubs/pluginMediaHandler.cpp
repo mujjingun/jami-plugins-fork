@@ -65,7 +65,7 @@ void PluginMediaHandler::notifyAVFrameSubject(const StreamData& data, jami::avSu
             subject->attach(opponent_vs.get());
         }
     } else if (data.type == StreamType::audio) {
-        if (data.direction) {
+        if (!data.direction) {
             // my audio
             subject->attach(audio_as.get());
         }

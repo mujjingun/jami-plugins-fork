@@ -64,5 +64,7 @@ private:
 
     std::unique_ptr<VideoSubscriberPimpl> pimpl;
     FrameScaler scaler;
+
+    std::deque<std::string> msgs;
 };
 } // namespace jami

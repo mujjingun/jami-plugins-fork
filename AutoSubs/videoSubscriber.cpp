@@ -73,6 +73,9 @@ VideoSubscriber::VideoSubscriber(const std::string& dataPath, MessageQueue* queu
     } else {
         Plog::log(Plog::LogPriority::INFO, TAG, "Font size set successfully");
     }
+
+    msgs.push_back("");
+    msgs.push_back("");
 }
 
 VideoSubscriber::~VideoSubscriber()
@@ -94,7 +97,7 @@ void rotate_image(cv::Mat& mat, int angle)
     }
 }
 
-void drawText(cv::Mat& mat, FT_Face face, std::string const& u8str)
+void drawText(cv::Mat& mat, FT_Face face, int baseline, std::string const& u8str)
 {
     // convert to utf32
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> u32conv;
@@ -123,7 +126,7 @@ void drawText(cv::Mat& mat, FT_Face face, std::string const& u8str)
     }
 
     // set text start position
-    cv::Point pos(mat.cols / 4, mat.rows / 2 - width / 2);
+    cv::Point pos(baseline, mat.rows / 2 - width / 2);
 
     // draw background
     cv::rectangle(mat,
@@ -217,7 +220,13 @@ void VideoSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
     // obtain result image
     rotate_image(frame, angle + 90);
 
-    drawText(frame, pimpl->face, queue->message());
+    auto msg = queue->message();
+    if (msgs.back() != msg) {
+        msgs.push_back(msg);
+        msgs.pop_front();
+    }
+    drawText(frame, pimpl->face, frame.cols / 4, msgs[0]);
+    drawText(frame, pimpl->face, frame.cols / 4 - 30, msgs[1]);
 
     rotate_image(frame, -angle - 90);
 

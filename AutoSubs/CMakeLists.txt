@@ -95,8 +95,10 @@ target_link_directories(${ProjectName} PUBLIC ${CONTRIB_PATH}
                                         ${FFMPEG}/bin
                                         )
 
-target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs411 opencv_imgproc411 opencv_core411 zlib
-                        "${FREETYPE_LIBRARIES}" ASRModel)
+target_link_libraries(${ProjectName} PUBLIC
+    swscale swresample
+    avutil opencv_imgcodecs411 opencv_imgproc411 opencv_core411 zlib
+    "${FREETYPE_LIBRARIES}" ASRModel)
 endif()
 
 if (UNIX)
@@ -112,8 +114,10 @@ target_link_directories(${ProjectName} PUBLIC ${CONTRIB_PATH}
                                         ${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib
                                         ${CONTRIB_PATH}/${CONTRIB_PLATFORM}/lib/opencv4/3rdparty
                                         )
-target_link_libraries(${ProjectName} PUBLIC swscale avutil opencv_imgcodecs opencv_imgproc opencv_core
-                        "${FREETYPE_LIBRARIES}" ASRModel)
+target_link_libraries(${ProjectName} PUBLIC
+    swscale
+    avutil opencv_imgcodecs opencv_imgproc opencv_core
+    "${FREETYPE_LIBRARIES}" ASRModel)
 
 target_compile_options(${ProjectName} PRIVATE)
 endif()
