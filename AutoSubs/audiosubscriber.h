@@ -48,6 +48,7 @@ private:
     bool running{true};
     bool initialFrame{true};
     bool newFrame{false};
+    bool resetModel{false};
 
     // for sample rate conversion
     SwrContext* swr_ctx = nullptr;
@@ -57,6 +58,7 @@ private:
 
     // buffer
     std::vector<std::int16_t> input_buffer;
+    std::vector<std::int16_t> logging_buffer;
 };
 }
 

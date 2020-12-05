@@ -39,6 +39,13 @@ AudioSubscriber::AudioSubscriber(const std::string& dataPath, MessageQueue* queu
                 break;
             }
 
+            // reset ASR model if requested
+            if (resetModel) {
+                asrModel.reset();
+                resetModel = false;
+                continue;
+            }
+
             // copy input
             std::swap(input_copy, input_buffer);
             input_buffer.clear();
@@ -157,6 +164,11 @@ void AudioSubscriber::update(jami::Observable<AVFrame*>*, AVFrame* const& iFrame
         newFrame = true;
     }
     inputCv.notify_all();
+
+    // logging
+    auto offset = logging_buffer.size();
+    logging_buffer.resize(offset + n_converted_samples);
+    std::memcpy(&logging_buffer[offset], dst_data[0], n_converted_samples * sizeof(std::int16_t));
 }
 
 void AudioSubscriber::attached(jami::Observable<AVFrame*>* observable)
@@ -173,6 +185,15 @@ void AudioSubscriber::detached(jami::Observable<AVFrame*>*)
     std::ostringstream oss;
     oss << "::Detached()" << std::endl;
     Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
+    resetModel = true;
+    inputCv.notify_all();
+
+    using namespace std::chrono;
+    auto fn = "audio" + std::to_string(system_clock::now().time_since_epoch().count()) + ".pcm";
+    std::ofstream outfile(fn, std::ios::binary);
+    outfile.write(reinterpret_cast<char*>(logging_buffer.data()), logging_buffer.size() * 2);
+    logging_buffer.clear();
+    Plog::log(Plog::LogPriority::INFO, TAG, "Wrote output to " + fn);
 }
 
 void AudioSubscriber::detach()

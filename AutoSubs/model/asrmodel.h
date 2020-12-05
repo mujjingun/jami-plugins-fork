@@ -13,6 +13,7 @@ public:
     ~ASRModel();
 
     std::string process(std::int16_t* buf, int size);
+    void reset();
 
 private:
     std::string extract_text();
@@ -21,6 +22,7 @@ private:
     std::unique_ptr<ASRModelPimpl> pimpl;
     int input_size, max_num_feats;
     int vad_frame_length;
+
     int counter = 0;
     bool voice_activity = false;
     std::vector<std::int16_t> vad_input_buf;

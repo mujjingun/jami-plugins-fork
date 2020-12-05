@@ -26,8 +26,8 @@
 #include <map>
 #include <string>
 
-#include "mel-computations.h"
 #include "feature-window.h"
+#include "mel-computations.h"
 #include "srfft.h"
 
 namespace kaldi {
@@ -111,6 +111,10 @@ public:
 
     ~FbankComputer();
 
+    // Disallow assignment.
+    FbankComputer& operator=(const FbankComputer& other) = delete;
+    FbankComputer& operator=(FbankComputer&& other) = default;
+
 private:
     const MelBanks* GetMelBanks(float vtln_warp);
 
@@ -118,8 +122,6 @@ private:
     float log_energy_floor_;
     std::map<float, MelBanks*> mel_banks_; // float is VTLN coefficient.
     SplitRadixRealFft<float>* srfft_;
-    // Disallow assignment.
-    FbankComputer& operator=(const FbankComputer& other);
 };
 
 } // namespace kaldi

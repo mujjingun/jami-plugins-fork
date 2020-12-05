@@ -11,6 +11,7 @@
 #include <pluglog.h>
 
 #include <algorithm>
+#include <fstream>
 
 #include "codes.h"
 #include "feat/online-feature.h"
@@ -24,26 +25,30 @@ static const kaldi::FbankOptions options = [] {
     options.frame_opts.frame_length_ms = 20.0f;
     options.frame_opts.frame_shift_ms = 10.0f;
     options.frame_opts.window_type = "hamming";
-    options.frame_opts.max_feature_vectors = -1;
+    options.frame_opts.max_feature_vectors = 1000; // 10s of audio
     return options;
 }();
 
 struct ASRModelPimpl {
     torch::Device device;
     torch::jit::script::Module module;
-    kaldi::OnlineFbank fbank;
+    std::unique_ptr<kaldi::OnlineFbank> fbank;
     Fvad* vad;
+    std::ofstream log_file;
+    bool first_input = true;
+    std::chrono::system_clock::time_point start_time{};
 };
 
 ASRModel::ASRModel(std::string const& model_path) try
     : pimpl(new ASRModelPimpl{
           torch::Device(torch::kCPU),
           torch::jit::load(model_path),
-          kaldi::OnlineFbank(options),
+          std::make_unique<kaldi::OnlineFbank>(options),
           fvad_new(),
+          std::ofstream("asr_log.txt", std::ios::app),
       }),
       input_size(options.frame_opts.PaddedWindowSize()),
-      max_num_feats(1000), // 10s of audio
+      max_num_feats(options.frame_opts.max_feature_vectors),
       vad_frame_length(16000 / 1000 * 10) // 10ms frames
 {
     pimpl->module.to(pimpl->device);
@@ -68,6 +73,22 @@ ASRModel::ASRModel(std::string const& model_path) try
     throw;
 }
 
+void ASRModel::reset()
+{
+    // reset model state
+    pimpl->fbank = std::make_unique<kaldi::OnlineFbank>(options);
+    pimpl->first_input = true;
+    counter = 0;
+    voice_activity = false;
+    vad_input_buf.clear();
+    input_buf.clear();
+    feature_offset = 0;
+    feature_buf.clear();
+
+    // flush log file
+    pimpl->log_file.flush();
+}
+
 ASRModel::~ASRModel()
 {
     fvad_free(pimpl->vad);
@@ -78,6 +99,12 @@ std::string ASRModel::process(int16_t* buf, int size)
     torch::NoGradGuard no_grad;
 
     bool segment_ended = false;
+
+    if (pimpl->first_input) {
+        pimpl->first_input = false;
+        pimpl->start_time = std::chrono::system_clock::now();
+        pimpl->log_file << "=====================================================\n";
+    }
 
     // voice activity detection
     for (int i = 0; i < size; ++i, ++counter) {
@@ -107,7 +134,7 @@ std::string ASRModel::process(int16_t* buf, int size)
                 for (int j = 0; j < vad_frame_length; ++j) {
                     input_buf[j] = vad_input_buf[j] / 32767.f;
                 }
-                pimpl->fbank.AcceptWaveform(16000, input_buf);
+                pimpl->fbank->AcceptWaveform(16000, input_buf);
             }
 
             vad_input_buf.clear();
@@ -129,19 +156,10 @@ std::string ASRModel::extract_text()
     std::u32string str{};
 
     feature_buf.clear();
-    for (; feature_offset < pimpl->fbank.NumFramesReady(); ++feature_offset) {
-        pimpl->fbank.GetFrame(feature_offset, &feature);
+    feature_offset = std::max(feature_offset, pimpl->fbank->NumFramesReady() - max_num_feats);
+    for (; feature_offset < pimpl->fbank->NumFramesReady(); ++feature_offset) {
+        pimpl->fbank->GetFrame(feature_offset, &feature);
         std::copy(feature.begin(), feature.end(), std::back_inserter(feature_buf));
-    }
-
-    // truncate voice
-    int max_feat_length = max_num_feats * options.mel_opts.num_bins;
-    if (int(feature_buf.size()) > max_feat_length) {
-        std::rotate(
-            feature_buf.begin(),
-            feature_buf.begin() + (feature_buf.size() - max_feat_length),
-            feature_buf.end());
-        feature_buf.resize(max_feat_length);
     }
 
     // normalize features
@@ -187,12 +205,18 @@ std::string ASRModel::extract_text()
         str.push_back(id_to_char.at(ch));
     }
 
+    // filter out garbage outputs
     if (str.size() > 50) {
         return "";
     }
 
     std::string u8str;
     utf::stringview(str.begin(), str.end()).to<utf::utf8>(std::back_inserter(u8str));
+
     Plog::log(Plog::LogPriority::INFO, TAG, "Extracted = " + u8str);
+    using namespace std::chrono;
+    auto elapsed = duration_cast<milliseconds>(system_clock::now() - pimpl->start_time);
+    pimpl->log_file << elapsed.count() << ": " << u8str << "\n";
+
     return u8str;
 }

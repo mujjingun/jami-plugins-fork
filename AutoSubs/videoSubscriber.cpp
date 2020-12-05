@@ -73,9 +73,6 @@ VideoSubscriber::VideoSubscriber(const std::string& dataPath, MessageQueue* queu
     } else {
         Plog::log(Plog::LogPriority::INFO, TAG, "Font size set successfully");
     }
-
-    msgs.push_back("");
-    msgs.push_back("");
 }
 
 VideoSubscriber::~VideoSubscriber()
@@ -253,6 +250,11 @@ void VideoSubscriber::attached(jami::Observable<AVFrame*>* observable)
     oss << "::Attached ! " << std::endl;
     Plog::log(Plog::LogPriority::INFO, TAG, oss.str());
     observable_ = observable;
+
+    // reset state
+    msgs.clear();
+    msgs.push_back("");
+    msgs.push_back("");
 }
 
 void VideoSubscriber::detached(jami::Observable<AVFrame*>*)
