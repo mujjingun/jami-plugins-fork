@@ -31,6 +31,7 @@ extern "C" {
 #include <map>
 #include <memory>
 #include <thread>
+#include <deque>
 
 // Frame Scaler
 #include <framescaler.h>

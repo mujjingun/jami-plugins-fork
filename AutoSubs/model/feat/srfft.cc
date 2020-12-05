@@ -31,6 +31,8 @@
 #include <cstring>
 #include <iostream>
 
+#define M_SQRT1_2 0.7071067811865475
+#define M_PI 3.1415926535897932384626
 #define M_2PI (2 * M_PI)
 
 namespace kaldi {

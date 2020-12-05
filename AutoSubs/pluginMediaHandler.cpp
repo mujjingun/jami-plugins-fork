@@ -61,8 +61,8 @@ void PluginMediaHandler::notifyAVFrameSubject(const StreamData& data, jami::avSu
 
         } else if (data.direction) {
             // the image I receive from the others on the call
-            Plog::log(Plog::LogPriority::INFO, TAG, "attach opponent_vs: " + data.source + " " + data.id);
-            subject->attach(opponent_vs.get());
+            //Plog::log(Plog::LogPriority::INFO, TAG, "attach opponent_vs: " + data.source + " " + data.id);
+            //subject->attach(opponent_vs.get());
         }
     } else if (data.type == StreamType::audio) {
         if (!data.direction) {

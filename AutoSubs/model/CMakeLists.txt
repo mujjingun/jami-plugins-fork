@@ -1,5 +1,6 @@
 set (PLUGINS_LIB ${PROJECT_SOURCE_DIR}/../lib)
 
+cmake_policy(SET CMP0111 NEW)
 set(Torch_DIR "${PROJECT_SOURCE_DIR}/libs/libtorch/share/cmake/Torch")
 find_package(Torch REQUIRED)
 message(NOTICE "Torch found: ${TORCH_LIBRARIES}")
@@ -9,9 +10,9 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(libfvad_ROOT "${PROJECT_SOURCE_DIR}/libs/libfvad")
 find_package(libfvad REQUIRED)
 message(NOTICE "libfvad found: ${libfvad_LIBRARIES}")
-
+ 
 add_library(ASRModel STATIC
-    asrmodel.cpp
+    asrmodel.cpp 
     codes.cpp
     feat/feature-fbank.cc
     feat/mel-computations.cc
@@ -27,4 +28,6 @@ set_property(TARGET ASRModel PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_compile_options(ASRModel PRIVATE)
 
-add_subdirectory(test)
+if(UNIX)
+    add_subdirectory(test)
+endif()

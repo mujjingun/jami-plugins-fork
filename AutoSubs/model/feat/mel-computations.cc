@@ -28,6 +28,8 @@
 #include "mel-computations.h"
 #include "utils.h"
 
+#define M_PI 3.1415926535897932384626
+
 namespace kaldi {
 
 MelBanks::MelBanks(const MelBanksOptions& opts,

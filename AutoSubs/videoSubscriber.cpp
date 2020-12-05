@@ -29,8 +29,6 @@ extern "C" {
 #include <libavutil/pixdesc.h>
 }
 
-#include <codecvt>
-
 // opencv
 #include <opencv2/imgproc.hpp>
 
@@ -40,6 +38,8 @@ extern "C" {
 
 // LOGGING
 #include <pluglog.h>
+
+#include "model/utf.hpp"
 
 static const std::string TAG = "AutoSub";
 
@@ -100,8 +100,8 @@ void rotate_image(cv::Mat& mat, int angle)
 void drawText(cv::Mat& mat, FT_Face face, int baseline, std::string const& u8str)
 {
     // convert to utf32
-    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> u32conv;
-    std::u32string str = u32conv.from_bytes(u8str);
+    std::u32string str;
+    utf::stringview(u8str.begin(), u8str.end()).to<utf::utf32>(std::back_inserter(str));
 
     // estimate text size
     // TODO: break lines

@@ -16,10 +16,13 @@ set (JPL_DIRECTORY ${PROJECT_BINARY_DIR}/jpl)
 set (LIBS_DIR ${PROJECT_SOURCE_DIR}/../contrib/Libs)
 set (preferencesFile preferences.json)
 
+cmake_policy(SET CMP0074 NEW)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+set(Freetype_ROOT "${PROJECT_SOURCE_DIR}/libs/Freetype")
 find_package(Freetype REQUIRED)
 message(NOTICE "Freetype found: ${FREETYPE_LIBRARIES}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 if(WIN32)
     message(OS:\  WINDOWS\ ${CMAKE_SYSTEM_PROCESSOR})
@@ -30,6 +33,7 @@ if(WIN32)
     set (CONTRIB_PLATFORM ${CONTRIB_PLATFORM_CURT}-windows)
     set (LIBRARY_FILE_NAME ${PLUGIN_NAME}.dll)
     set (LIBS_BIN_DIR $ENV{PLUGIN_ENV})
+    set (FFMPEG ${CONTRIB_PATH}/build/ffmpeg/Build/win32/x64)
 endif()
 
 if(UNIX)
@@ -138,9 +142,18 @@ if (WIN32)
     add_custom_command(
         TARGET ${ProjectName}
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${JPL_DIRECTORY}/../../../build/${CONTRIB_PLATFORM}
-        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/${ProjectName}.lib ${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}
-        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/${LIBRARY_FILE_NAME} ${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${JPL_DIRECTORY}/../../../build/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/libs/Freetype/lib/freetype.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/libs/libtorch/lib/asmjit.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/libs/libtorch/lib/c10.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/libs/libtorch/lib/fbgemm.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/libs/libtorch/lib/libiomp5md.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_SOURCE_DIR}/libs/libtorch/lib/torch_cpu.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CONTRIB_PATH}/build/ffmpeg/Output/win32/x64/libavutil/avutil-56.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CONTRIB_PATH}/build/ffmpeg/Output/win32/x64/libswresample/swresample-3.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CONTRIB_PATH}/build/ffmpeg/Output/win32/x64/libswscale/swscale-5.dll" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_BINARY_DIR}/Release/${ProjectName}.lib" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_BINARY_DIR}/Release/${LIBRARY_FILE_NAME}" "${JPL_DIRECTORY}/lib/${CONTRIB_PLATFORM}"
         COMMAND python ${PROJECT_SOURCE_DIR}/../assemble-plugin.py --plugins=${ProjectName}
         COMMENT "Generating JPL archive"
     )

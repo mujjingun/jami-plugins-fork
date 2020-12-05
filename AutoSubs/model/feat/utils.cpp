@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cmath>
 
+#define M_PI  3.1415926535897932384626
 #define M_2PI (2 * M_PI)
 
 namespace kaldi {
